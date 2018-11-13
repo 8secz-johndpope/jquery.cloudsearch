@@ -2,7 +2,7 @@
 
     //Defaults - Local Settings
     var ls = {
-        azureSearch: {
+        cloudSearch: {
             url: "",
             key: ""
         },
@@ -15,7 +15,7 @@
             lat: null,
             lng: null,
             fieldName: '_distance',
-            azureFieldName: null,
+            cloudFieldName: null,
             unit: 'K',
             maxDistance: null
         },
@@ -91,7 +91,7 @@
      * jQuuery Plugin Definition
      */
 
-    $.fn.azuresearch = function (options, action) {
+    $.fn.cloudsearch = function (options, action) {
 
         if (!action)
             action = 'search';
@@ -154,7 +154,7 @@
     function defaultFacetClick(e) {
         e.preventDefault();
 
-        var value = $(this).data('azuresearchFacetName') + '|' + $(this).data('azuresearchFacetValue');
+        var value = $(this).data('cloudsearchFacetName') + '|' + $(this).data('cloudsearchFacetValue');
 
         if (ls.facetsSelected.indexOf(value) != -1)
             return;
@@ -250,14 +250,14 @@
             } else {
                 //With template
                 var t = $(rs.template);
-                $(':not([data-azuresearch-field=""])', t).each(function (y, z) {
-                    var field = $(z).data('azuresearchField');
+                $(':not([data-cloudsearch-field=""])', t).each(function (y, z) {
+                    var field = $(z).data('cloudsearchField');
                     var value = '';
                     if (field && v[field]) {
                         value = v[field];
                     } else if (field == ls.geoSearch.fieldName && local.isGeoSearch) {
-                        if (v[ls.geoSearch.azureFieldName]) {
-                            var geo = v[ls.geoSearch.azureFieldName];
+                        if (v[ls.geoSearch.cloudFieldName]) {
+                            var geo = v[ls.geoSearch.cloudFieldName];
                             value = distance(
                                 ls.geoSearch.lat, ls.geoSearch.lng,
                                 geo.coordinates[1], geo.coordinates[0],
@@ -266,7 +266,7 @@
                     }
 
                     //Format the data using the provided Callback function
-                    var format = $(z).data('azuresearchValueFormat');
+                    var format = $(z).data('cloudsearchValueFormat');
                     if (format && window[format])
                         value = window[format](value, v);
 
@@ -329,8 +329,8 @@
                         .addClass(fs.facetClass)
                         .html(k.value)
                         .on('click', fs.facetOnClick)
-                        .data('azuresearchFacetName', v)
-                        .data('azuresearchFacetValue', k.value);
+                        .data('cloudsearchFacetName', v)
+                        .data('cloudsearchFacetValue', k.value);
 
                     //Counter
                     if (fs.showCount && ls.facets.countWrapper) {
@@ -373,84 +373,85 @@
      * External API Calls
      */
 
-    //Execute the AJAX call to Azure Search
+    //Execute the AJAX call to AWS Cloud Search
     function search() {
 
-        local.isGeoSearch = false;
+        // local.isGeoSearch = false;
 
-        if (local.waitingLatLong)
-            return;
+        // if (local.waitingLatLong)
+        //     return;
 
-        //Check if it's geo search
-        if (ls.geoSearch.lat && ls.geoSearch.lng) {
-            debug('Geo searching...');
-            debug(ls.geoSearch.lat);
-            debug(ls.geoSearch.lng);
-            local.isGeoSearch = true;
-            if (!ls.searchParms.orderby || ls.searchParms.orderby.indexOf(ls.geoSearch.fieldName) == 0) {
-                var orderby = "geo.distance(" + ls.geoSearch.azureFieldName;
-                orderby += ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")')";
-                if (ls.searchParms.orderby && ls.searchParms.orderby.indexOf(' desc') != -1) orderby += ' desc';
-                ls.searchParms.orderby = orderby;
-            }
-        }
+        // //Check if it's geo search
+        // if (ls.geoSearch.lat && ls.geoSearch.lng) {
+        //     debug('Geo searching...');
+        //     debug(ls.geoSearch.lat);
+        //     debug(ls.geoSearch.lng);
+        //     local.isGeoSearch = true;
+        //     if (!ls.searchParms.orderby || ls.searchParms.orderby.indexOf(ls.geoSearch.fieldName) == 0) {
+        //         var orderby = "geo.distance(" + ls.geoSearch.cloudFieldName;
+        //         orderby += ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")')";
+        //         if (ls.searchParms.orderby && ls.searchParms.orderby.indexOf(' desc') != -1) orderby += ' desc';
+        //         ls.searchParms.orderby = orderby;
+        //     }
+        // }
 
-        var f = null;
-        //Save the current filter
-        var previousFilter = ls.searchParms.filter;
+        // var f = null;
+        // //Save the current filter
+        // var previousFilter = ls.searchParms.filter;
 
-        //Apply Facet Filters
-        if (ls.facetsSelected.length > 0) {
-            var facetFilter = [];
-            ls.facetsSelected.forEach(function (item, index) {
-                var p = item.split('|');
-                // apply filter and escape single quotes in value (')
-                facetFilter.push(p[0] + '/any(m: m eq \'' + p[1].replace(/[']/gi,'\'\'') + '\')');
-            });
+        // //Apply Facet Filters
+        // if (ls.facetsSelected.length > 0) {
+        //     var facetFilter = [];
+        //     ls.facetsSelected.forEach(function (item, index) {
+        //         var p = item.split('|');
+        //         // apply filter and escape single quotes in value (')
+        //         facetFilter.push(p[0] + '/any(m: m eq \'' + p[1].replace(/[']/gi,'\'\'') + '\')');
+        //     });
 
-            f = facetFilter.join(' ' + ls.facets.searchMode + ' ');
+        //     f = facetFilter.join(' ' + ls.facets.searchMode + ' ');
 
-            if (previousFilter)
-                f = ls.searchParms.filter + ' ' + ls.facets.searchMode + ' ' + f;
+        //     if (previousFilter)
+        //         f = ls.searchParms.filter + ' ' + ls.facets.searchMode + ' ' + f;
 
-        }
+        // }
 
-        //Apply geo distance filter if configured
-        if (local.isGeoSearch && ls.geoSearch.maxDistance) {
-            debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
-            var geoFilter = "geo.distance(" + ls.geoSearch.azureFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
-            if(f) {
-                f += ' and ' + geoFilter
-            } else {
-                f = geoFilter;
-            }
-        }
+        // //Apply geo distance filter if configured
+        // if (local.isGeoSearch && ls.geoSearch.maxDistance) {
+        //     debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
+        //     var geoFilter = "geo.distance(" + ls.geoSearch.cloudFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
+        //     if(f) {
+        //         f += ' and ' + geoFilter
+        //     } else {
+        //         f = geoFilter;
+        //     }
+        // }
         
-        if (f)
-            ls.searchParms.filter = f;
+        // if (f)
+        //     ls.searchParms.filter = f;
 
+        console.log(ls.cloudSearch.url);
 
         var settings = {
             "crossDomain": true,
-            "url": ls.azureSearch.url,
+            "url": ls.cloudSearch.url,
             "method": "POST",
             "headers": {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "api-key": ls.azureSearch.key,
+                "api-key": ls.cloudSearch.key,
                 "Cache-Control": "no-cache",
             },
-            "data": JSON.stringify(ls.searchParms)
+            // "data": JSON.stringify(ls.searchParms)
         }
 
         $.ajax(settings).done(function (response) {
-            local.totalResults = ls.searchParms.count && response['@odata.count']
-                ? response['@odata.count'] : -1;
-            ls.onResults.call(response, local);
+            // local.totalResults = ls.searchParms.count && response['@odata.count']
+            //     ? response['@odata.count'] : -1;
+            // ls.onResults.call(response, local);
         });
 
         //Return the filter to the original state
-        ls.searchParms.filter = previousFilter;
+        // ls.searchParms.filter = previousFilter;
     }
 
 

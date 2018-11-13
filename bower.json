@@ -1,13 +1,14 @@
 {
-  "name": "jquery.azuresearch",
-  "description": "Azure Search Jquery Plugin",
-  "main": "dist/jquery.azuresearch.js",
+  "name": "jquery.cloudsearch",
+  "description": "Amazon CloudSearch Jquery Plugin",
+  "main": "dist/jquery.cloudsearch.js",
   "authors": [
     "The Pixel Shop"
   ],
   "license": "ISC",
   "keywords": [
-    "azure",
+    "CloudSearch",
+    "AWS",
     "search"
   ],
   "homepage": "",
