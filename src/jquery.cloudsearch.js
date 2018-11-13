@@ -20,13 +20,14 @@
             maxDistance: null
         },
         searchParms: {
-            search: "*",
-            facets: [],
-            count: true,
-            top: 50,
-            skip: 0,
-            filter: null,
-            orderby: null
+            q: "",
+            return: "_all_fields",
+            size: 10, // page size
+            sort: "",
+            start: 0, // offset starting result (pagination)
+            // facets: [],
+            // filter: null,
+            // orderby: null
         },
         facets: {
             facet: '<a href=\"#\"/>',
@@ -85,8 +86,7 @@
         totalResults: 0,
         initialized: false
     }
-
-
+    
     /**
      * jQuuery Plugin Definition
      */
@@ -136,7 +136,6 @@
     };
 
 
-
     /**
      * Handlers
      */
@@ -144,7 +143,7 @@
     function processResults() {
         var data = this;
 
-        loadFacets(data);
+        // loadFacets(data);
         loadResults(data);
 
         ls.onLoad.call(data, local);
@@ -221,40 +220,47 @@
 
     //Display the results
     function loadResults(data) {
+        
         var rs = ls.results;
         var c = $(rs.container);
-
-        if (!c || !data["value"])
+        
+        if (!c || !data["hits"]["hit"])    
             return;
-
+        
         //Clear the container if skip is 0 or if the clear is forced by setting
         if (rs.alwaysClearContainer || ls.searchParms.skip == 0)
             c.html('');
-
-        $(data["value"]).each(function (i, v) {
-
+                
+        $(data["hits"]["hit"]).each(function (i, v) {
+            
+            var fields = v["fields"];
             //Populate the results
             if (!rs.template) {
                 //Without a template, just display all the fields with some content
                 var l = $('<dl/>')
-                $(Object.keys(v)).each(function (j, k) {
-                    if (!v[k] || v[k] == '')
+                var hr = $('<hr/>');
+                
+                $(Object.keys(fields)).each(function (j, k) {
+                    if (!fields[k] || fields[k] == '')
                         return true;
                     $('<dt/>').text(k).appendTo(l);
-                    $('<dd/>').text(v[k]).appendTo(l);
+                    $('<dd/>').text(fields[k]).appendTo(l);
                 });
                 l.appendTo(c);
+                hr.appendTo(c);
 
                 //Callback on create
                 rs.onCreate.call(l);
             } else {
                 //With template
                 var t = $(rs.template);
-                $(':not([data-cloudsearch-field=""])', t).each(function (y, z) {
+                $(':not([data-cloudsearch-field=""])', t).not().each(function (y, z) {
+                    
                     var field = $(z).data('cloudsearchField');
                     var value = '';
-                    if (field && v[field]) {
-                        value = v[field];
+                    
+                    if (field && v["fields"][field]) {
+                        value = v["fields"][field];
                     } else if (field == ls.geoSearch.fieldName && local.isGeoSearch) {
                         if (v[ls.geoSearch.cloudFieldName]) {
                             var geo = v[ls.geoSearch.cloudFieldName];
@@ -376,24 +382,24 @@
     //Execute the AJAX call to AWS Cloud Search
     function search() {
 
-        // local.isGeoSearch = false;
+        local.isGeoSearch = false;
 
-        // if (local.waitingLatLong)
-        //     return;
+        if (local.waitingLatLong)
+            return;
 
-        // //Check if it's geo search
-        // if (ls.geoSearch.lat && ls.geoSearch.lng) {
-        //     debug('Geo searching...');
-        //     debug(ls.geoSearch.lat);
-        //     debug(ls.geoSearch.lng);
-        //     local.isGeoSearch = true;
-        //     if (!ls.searchParms.orderby || ls.searchParms.orderby.indexOf(ls.geoSearch.fieldName) == 0) {
-        //         var orderby = "geo.distance(" + ls.geoSearch.cloudFieldName;
-        //         orderby += ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")')";
-        //         if (ls.searchParms.orderby && ls.searchParms.orderby.indexOf(' desc') != -1) orderby += ' desc';
-        //         ls.searchParms.orderby = orderby;
-        //     }
-        // }
+        //Check if it's geo search
+        if (ls.geoSearch.lat && ls.geoSearch.lng) {
+            debug('Geo searching...');
+            debug(ls.geoSearch.lat);
+            debug(ls.geoSearch.lng);
+            local.isGeoSearch = true;
+            if (!ls.searchParms.orderby || ls.searchParms.orderby.indexOf(ls.geoSearch.fieldName) == 0) {
+                var orderby = "geo.distance(" + ls.geoSearch.cloudFieldName;
+                orderby += ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")')";
+                if (ls.searchParms.orderby && ls.searchParms.orderby.indexOf(' desc') != -1) orderby += ' desc';
+                ls.searchParms.orderby = orderby;
+            }
+        }
 
         // var f = null;
         // //Save the current filter
@@ -428,26 +434,23 @@
         
         // if (f)
         //     ls.searchParms.filter = f;
-
-        console.log(ls.cloudSearch.url);
-
+        
         var settings = {
             "crossDomain": true,
             "url": ls.cloudSearch.url,
-            "method": "POST",
+            "method": "GET",
             "headers": {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "api-key": ls.cloudSearch.key,
+                "X-Api-Key": ls.cloudSearch.key,
                 "Cache-Control": "no-cache",
             },
-            // "data": JSON.stringify(ls.searchParms)
+            "data": ls.searchParms
         }
 
         $.ajax(settings).done(function (response) {
-            // local.totalResults = ls.searchParms.count && response['@odata.count']
-            //     ? response['@odata.count'] : -1;
-            // ls.onResults.call(response, local);
+            local.totalResults = response.hits.found > 0 ? response.hits.found : -1;
+            ls.onResults.call(response, local);
         });
 
         //Return the filter to the original state
@@ -540,7 +543,7 @@
         }
 
         //Apply Parameters
-        if (search) ls.searchParms.search = search;
+        if (search) ls.searchParms.q = search;
         if (latitude && longitude) {
             ls.geoSearch.lat = latitude;
             ls.geoSearch.lng = longitude;
@@ -556,5 +559,7 @@
         }
 
     }
+
+
 
 }(jQuery));
