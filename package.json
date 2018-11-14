@@ -1,13 +1,18 @@
 {
-  "name": "jquery.azuresearch",
+  "name": "jquery.cloudsearch",
   "version": "1.0.0",
-  "description": "Azure Search Jquery Plugin",
+  "description": "Amazon CloudSearch Jquery Plugin",
   "main": "test.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ThePixelShop/jquery.cloudsearch.git"    
+  },
   "keywords": [
-    "azure",
+    "cloudsearch",
+    "AWS",
     "search"
   ],
   "author": "The Pixel Shop",
@@ -25,5 +30,8 @@
     "gulp-size": "^3.0.0",
     "gulp-sourcemaps": "^2.6.4",
     "gulp-util": "^3.0.8"
+  },
+  "dependencies": {
+    "bower": "^1.8.4"
   }
 }

@@ -2,7 +2,7 @@
 
     //Defaults - Local Settings
     var ls = {
-        azureSearch: {
+        cloudSearch: {
             url: "",
             key: ""
         },
@@ -15,18 +15,19 @@
             lat: null,
             lng: null,
             fieldName: '_distance',
-            azureFieldName: null,
+            cloudFieldName: null,
             unit: 'K',
             maxDistance: null
         },
-        searchParms: {
-            search: "*",
-            facets: [],
-            count: true,
-            top: 50,
-            skip: 0,
-            filter: null,
-            orderby: null
+        searchParams: {
+            q: "",
+            return: "_all_fields",
+            size: 10, // page size
+            sort: "",
+            start: 0, // offset starting result (pagination)
+            // facets: [],
+            // filter: null,
+            // orderby: null
         },
         facets: {
             facet: '<a href=\"#\"/>',
@@ -85,26 +86,32 @@
         totalResults: 0,
         initialized: false
     }
-
-
+    
     /**
      * jQuuery Plugin Definition
      */
 
-    $.fn.azuresearch = function (options, action) {
+    $.fn.cloudsearch = function (options, action) {
 
         if (!action)
             action = 'search';
 
         if (options) {
             //Default options.
-            if (options.googleGeocodeApi) options.googleGeocodeApi = $.extend(ls.googleGeocodeApi, options.googleGeocodeApi);
-            if (options.searchParms) options.searchParms = $.extend(ls.searchParms, options.searchParms);
-            if (options.facets) options.facets = $.extend(ls.facets, options.facets);
-            if (options.facetsApplied) options.facetsApplied = $.extend(ls.facetsApplied, options.facetsApplied);
-            if (options.results) options.results = $.extend(ls.results, options.results);
-            if (options.geoSearch) options.geoSearch = $.extend(ls.geoSearch, options.geoSearch);
-            if (options.urlParameters) options.urlParameters = $.extend(ls.urlParameters, options.urlParameters);
+            if (options.googleGeocodeApi) 
+                options.googleGeocodeApi = $.extend(ls.googleGeocodeApi, options.googleGeocodeApi);
+            if (options.searchParams) 
+                options.searchParams = $.extend(ls.searchParams, options.searchParams);
+            if (options.facets) 
+                options.facets = $.extend(ls.facets, options.facets);
+            if (options.facetsApplied) 
+                options.facetsApplied = $.extend(ls.facetsApplied, options.facetsApplied);
+            if (options.results) 
+                options.results = $.extend(ls.results, options.results);
+            if (options.geoSearch) 
+                options.geoSearch = $.extend(ls.geoSearch, options.geoSearch);
+            if (options.urlParameters) 
+                options.urlParameters = $.extend(ls.urlParameters, options.urlParameters);
             ls = $.extend(ls, options);
 
             checkUrlParameters();
@@ -135,8 +142,6 @@
 
     };
 
-
-
     /**
      * Handlers
      */
@@ -144,7 +149,7 @@
     function processResults() {
         var data = this;
 
-        loadFacets(data);
+        // loadFacets(data);
         loadResults(data);
 
         ls.onLoad.call(data, local);
@@ -154,7 +159,7 @@
     function defaultFacetClick(e) {
         e.preventDefault();
 
-        var value = $(this).data('azuresearchFacetName') + '|' + $(this).data('azuresearchFacetValue');
+        var value = $(this).data('cloudsearchFacetName') + '|' + $(this).data('cloudsearchFacetValue');
 
         if (ls.facetsSelected.indexOf(value) != -1)
             return;
@@ -221,43 +226,50 @@
 
     //Display the results
     function loadResults(data) {
+        
         var rs = ls.results;
         var c = $(rs.container);
-
-        if (!c || !data["value"])
+        
+        if (!c || !data["hits"]["hit"])    
             return;
-
+        
         //Clear the container if skip is 0 or if the clear is forced by setting
-        if (rs.alwaysClearContainer || ls.searchParms.skip == 0)
+        if (rs.alwaysClearContainer || ls.searchParams.skip == 0)
             c.html('');
-
-        $(data["value"]).each(function (i, v) {
-
+                
+        $(data["hits"]["hit"]).each(function (i, v) {
+            
+            var fields = v["fields"];
             //Populate the results
             if (!rs.template) {
                 //Without a template, just display all the fields with some content
                 var l = $('<dl/>')
-                $(Object.keys(v)).each(function (j, k) {
-                    if (!v[k] || v[k] == '')
+                var hr = $('<hr/>');
+                
+                $(Object.keys(fields)).each(function (j, k) {
+                    if (!fields[k] || fields[k] == '')
                         return true;
                     $('<dt/>').text(k).appendTo(l);
-                    $('<dd/>').text(v[k]).appendTo(l);
+                    $('<dd/>').text(fields[k]).appendTo(l);
                 });
                 l.appendTo(c);
+                hr.appendTo(c);
 
                 //Callback on create
                 rs.onCreate.call(l);
             } else {
                 //With template
                 var t = $(rs.template);
-                $(':not([data-azuresearch-field=""])', t).each(function (y, z) {
-                    var field = $(z).data('azuresearchField');
+                $(':not([data-cloudsearch-field=""])', t).not().each(function (y, z) {
+                    
+                    var field = $(z).data('cloudsearchField');
                     var value = '';
-                    if (field && v[field]) {
-                        value = v[field];
+                    
+                    if (field && v["fields"][field]) {
+                        value = v["fields"][field];
                     } else if (field == ls.geoSearch.fieldName && local.isGeoSearch) {
-                        if (v[ls.geoSearch.azureFieldName]) {
-                            var geo = v[ls.geoSearch.azureFieldName];
+                        if (v[ls.geoSearch.cloudFieldName]) {
+                            var geo = v[ls.geoSearch.cloudFieldName];
                             value = distance(
                                 ls.geoSearch.lat, ls.geoSearch.lng,
                                 geo.coordinates[1], geo.coordinates[0],
@@ -266,7 +278,7 @@
                     }
 
                     //Format the data using the provided Callback function
-                    var format = $(z).data('azuresearchValueFormat');
+                    var format = $(z).data('cloudsearchValueFormat');
                     if (format && window[format])
                         value = window[format](value, v);
 
@@ -294,7 +306,7 @@
 
         c.html('');
 
-        $(ls.searchParms.facets).each(function (i, v) {
+        $(ls.searchParams.facets).each(function (i, v) {
 
             //Ignore the faceting options if any
             if (v.indexOf(',') != -1)
@@ -329,8 +341,8 @@
                         .addClass(fs.facetClass)
                         .html(k.value)
                         .on('click', fs.facetOnClick)
-                        .data('azuresearchFacetName', v)
-                        .data('azuresearchFacetValue', k.value);
+                        .data('cloudsearchFacetName', v)
+                        .data('cloudsearchFacetValue', k.value);
 
                     //Counter
                     if (fs.showCount && ls.facets.countWrapper) {
@@ -373,7 +385,7 @@
      * External API Calls
      */
 
-    //Execute the AJAX call to Azure Search
+    //Execute the AJAX call to AWS Cloud Search
     function search() {
 
         local.isGeoSearch = false;
@@ -387,17 +399,17 @@
             debug(ls.geoSearch.lat);
             debug(ls.geoSearch.lng);
             local.isGeoSearch = true;
-            if (!ls.searchParms.orderby || ls.searchParms.orderby.indexOf(ls.geoSearch.fieldName) == 0) {
-                var orderby = "geo.distance(" + ls.geoSearch.azureFieldName;
+            if (!ls.searchParams.orderby || ls.searchParams.orderby.indexOf(ls.geoSearch.fieldName) == 0) {
+                var orderby = "geo.distance(" + ls.geoSearch.cloudFieldName;
                 orderby += ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")')";
-                if (ls.searchParms.orderby && ls.searchParms.orderby.indexOf(' desc') != -1) orderby += ' desc';
-                ls.searchParms.orderby = orderby;
+                if (ls.searchParams.orderby && ls.searchParams.orderby.indexOf(' desc') != -1) orderby += ' desc';
+                ls.searchParams.orderby = orderby;
             }
         }
 
         var f = null;
         //Save the current filter
-        var previousFilter = ls.searchParms.filter;
+        var previousFilter = ls.searchParams.filter;
 
         //Apply Facet Filters
         if (ls.facetsSelected.length > 0) {
@@ -411,14 +423,14 @@
             f = facetFilter.join(' ' + ls.facets.searchMode + ' ');
 
             if (previousFilter)
-                f = ls.searchParms.filter + ' ' + ls.facets.searchMode + ' ' + f;
+                f = ls.searchParams.filter + ' ' + ls.facets.searchMode + ' ' + f;
 
         }
 
         //Apply geo distance filter if configured
         if (local.isGeoSearch && ls.geoSearch.maxDistance) {
             debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
-            var geoFilter = "geo.distance(" + ls.geoSearch.azureFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
+            var geoFilter = "geo.distance(" + ls.geoSearch.cloudFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
             if(f) {
                 f += ' and ' + geoFilter
             } else {
@@ -427,30 +439,28 @@
         }
         
         if (f)
-            ls.searchParms.filter = f;
-
-
+            ls.searchParams.filter = f;
+        
         var settings = {
             "crossDomain": true,
-            "url": ls.azureSearch.url,
-            "method": "POST",
+            "url": ls.cloudSearch.url,
+            "method": "GET",
             "headers": {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "api-key": ls.azureSearch.key,
+                "X-Api-Key": ls.cloudSearch.key,
                 "Cache-Control": "no-cache",
             },
-            "data": JSON.stringify(ls.searchParms)
-        }
+            "data": ls.searchParams
+        };
 
         $.ajax(settings).done(function (response) {
-            local.totalResults = ls.searchParms.count && response['@odata.count']
-                ? response['@odata.count'] : -1;
+            local.totalResults = response.hits.found > 0 ? response.hits.found : -1;
             ls.onResults.call(response, local);
         });
 
         //Return the filter to the original state
-        ls.searchParms.filter = previousFilter;
+        // ls.searchParams.filter = previousFilter;
     }
 
 
@@ -539,7 +549,7 @@
         }
 
         //Apply Parameters
-        if (search) ls.searchParms.search = search;
+        if (search) ls.searchParams.q = search;
         if (latitude && longitude) {
             ls.geoSearch.lat = latitude;
             ls.geoSearch.lng = longitude;
@@ -555,5 +565,7 @@
         }
 
     }
+
+
 
 }(jQuery));
