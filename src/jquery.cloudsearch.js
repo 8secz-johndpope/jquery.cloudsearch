@@ -563,3 +563,97 @@
 
 
 }(jQuery));
+
+// AWS Suggester 
+
+(function ($) {
+
+    //Defaults - Local Settings
+    var ls = {
+        cloudSuggester: {
+            url: '',
+            key: ''       
+        },
+        searchParams: {
+            q : '',
+            suggester: '',
+            size: 10            
+        },           
+        onLoad: function () { },
+        debug: false
+    }
+
+    var local = {        
+        
+        initialized: false
+    }
+
+    $.fn.cloudsearchSuggester = function(options) {        
+        
+        if (options) {
+            //Default options.
+            if (options.cloudSuggester) 
+                options.cloudSuggester = $.extend(ls.cloudSuggester, options.cloudSuggester);
+            if (options.searchParams) 
+                options.searchParams = $.extend(ls.searchParams, options.searchParams);      
+            if (options.input) 
+                options.input = $.extend(ls.input, options.input);            
+                                    
+            ls = $.extend(ls, options);
+        }
+
+        local.initialized = true;
+
+        // return
+        // return(
+            $.when( getSuggestions() ).then(function( data, textStatus, jqXHR ){
+                console.log(data);
+                alert('foobar');
+                return data;
+            })
+        // );
+        
+
+    };
+    
+
+    function getSuggestions() {
+             
+        var settings = {
+            "crossDomain": true,
+            "url": ls.cloudSuggester.url,
+            "method": "GET",
+            "headers": {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "X-Api-Key": ls.cloudSuggester.key,
+                "Cache-Control": "no-cache",
+            },
+            "data": ls.searchParams
+        };
+
+        return $.ajax(settings);
+    }
+
+    // function processResults() {
+    //     var data = this;
+                
+    //     var suggArr = [];
+    //     $.each(data.suggest.suggestions, function(k,v){
+    //         suggArr.push(v.suggestion)
+    //     });
+        
+    //     ls.suggestions = suggArr;
+    //     debug(ls.suggestions);
+    //     return ls.suggestions;
+
+    //     ls.onLoad.call(data, local);
+    // }
+
+    function debug(obj) {
+        if (ls.debug && window.console && window.console.log) {
+            window.console.log(obj);
+        }
+    };    
+
+}(jQuery));
