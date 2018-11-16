@@ -20,14 +20,14 @@
             maxDistance: null
         },
         searchParms: {
-            q: "",
+            q: "matchall",
+            "q.parser": "structured",
             return: "_all_fields",
             size: 10, // page size
-            sort: "",
+            sort: "_score desc",
             start: 0, // offset starting result (pagination)
-            // facets: [],
-            // filter: null,
-            // orderby: null
+            facets: [],
+            filter: null,
         },
         facets: {
             facet: '<a href=\"#\"/>',
@@ -237,14 +237,14 @@
             //Populate the results
             if (!rs.template) {
                 //Without a template, just display all the fields with some content
-                var l = $('<dl/>')
+                var l = $('<ul/>')
                 var hr = $('<hr/>');
                 
                 $(Object.keys(fields)).each(function (j, k) {
                     if (!fields[k] || fields[k] == '')
                         return true;
-                    $('<dt/>').text(k).appendTo(l);
-                    $('<dd/>').text(fields[k]).appendTo(l);
+                    var item = $('<li/>').text(k + " : ").appendTo(l);
+                    $('<strong/>').text(fields[k]).appendTo(item);
                 });
                 l.appendTo(c);
                 hr.appendTo(c);
@@ -401,39 +401,39 @@
             }
         }
 
-        // var f = null;
-        // //Save the current filter
-        // var previousFilter = ls.searchParms.filter;
+        var f = null;
+        //Save the current filter
+        var previousFilter = ls.searchParms.filter;
 
-        // //Apply Facet Filters
-        // if (ls.facetsSelected.length > 0) {
-        //     var facetFilter = [];
-        //     ls.facetsSelected.forEach(function (item, index) {
-        //         var p = item.split('|');
-        //         // apply filter and escape single quotes in value (')
-        //         facetFilter.push(p[0] + '/any(m: m eq \'' + p[1].replace(/[']/gi,'\'\'') + '\')');
-        //     });
+        //Apply Facet Filters
+        if (ls.facetsSelected.length > 0) {
+            var facetFilter = [];
+            ls.facetsSelected.forEach(function (item, index) {
+                var p = item.split('|');
+                // apply filter and escape single quotes in value (')
+                facetFilter.push(p[0] + '/any(m: m eq \'' + p[1].replace(/[']/gi,'\'\'') + '\')');
+            });
 
-        //     f = facetFilter.join(' ' + ls.facets.searchMode + ' ');
+            f = facetFilter.join(' ' + ls.facets.searchMode + ' ');
 
-        //     if (previousFilter)
-        //         f = ls.searchParms.filter + ' ' + ls.facets.searchMode + ' ' + f;
+            if (previousFilter)
+                f = ls.searchParms.filter + ' ' + ls.facets.searchMode + ' ' + f;
 
-        // }
+        }
 
-        // //Apply geo distance filter if configured
-        // if (local.isGeoSearch && ls.geoSearch.maxDistance) {
-        //     debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
-        //     var geoFilter = "geo.distance(" + ls.geoSearch.cloudFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
-        //     if(f) {
-        //         f += ' and ' + geoFilter
-        //     } else {
-        //         f = geoFilter;
-        //     }
-        // }
+        //Apply geo distance filter if configured
+        if (local.isGeoSearch && ls.geoSearch.maxDistance) {
+            debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
+            var geoFilter = "geo.distance(" + ls.geoSearch.cloudFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
+            if(f) {
+                f += ' and ' + geoFilter
+            } else {
+                f = geoFilter;
+            }
+        }
         
-        // if (f)
-        //     ls.searchParms.filter = f;
+        if (f)
+            ls.searchParms.filter = f;
         
         var settings = {
             "crossDomain": true,
@@ -561,99 +561,5 @@
     }
 
 
-
-}(jQuery));
-
-// AWS Suggester 
-
-(function ($) {
-
-    //Defaults - Local Settings
-    var ls = {
-        cloudSuggester: {
-            url: '',
-            key: ''       
-        },
-        searchParams: {
-            q : '',
-            suggester: '',
-            size: 10            
-        },           
-        onLoad: function () { },
-        debug: false
-    }
-
-    var local = {        
-        
-        initialized: false
-    }
-
-    $.fn.cloudsearchSuggester = function(options) {        
-        
-        if (options) {
-            //Default options.
-            if (options.cloudSuggester) 
-                options.cloudSuggester = $.extend(ls.cloudSuggester, options.cloudSuggester);
-            if (options.searchParams) 
-                options.searchParams = $.extend(ls.searchParams, options.searchParams);      
-            if (options.input) 
-                options.input = $.extend(ls.input, options.input);            
-                                    
-            ls = $.extend(ls, options);
-        }
-
-        local.initialized = true;
-
-        // return
-        // return(
-            $.when( getSuggestions() ).then(function( data, textStatus, jqXHR ){
-                console.log(data);
-                alert('foobar');
-                return data;
-            })
-        // );
-        
-
-    };
-    
-
-    function getSuggestions() {
-             
-        var settings = {
-            "crossDomain": true,
-            "url": ls.cloudSuggester.url,
-            "method": "GET",
-            "headers": {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "X-Api-Key": ls.cloudSuggester.key,
-                "Cache-Control": "no-cache",
-            },
-            "data": ls.searchParams
-        };
-
-        return $.ajax(settings);
-    }
-
-    // function processResults() {
-    //     var data = this;
-                
-    //     var suggArr = [];
-    //     $.each(data.suggest.suggestions, function(k,v){
-    //         suggArr.push(v.suggestion)
-    //     });
-        
-    //     ls.suggestions = suggArr;
-    //     debug(ls.suggestions);
-    //     return ls.suggestions;
-
-    //     ls.onLoad.call(data, local);
-    // }
-
-    function debug(obj) {
-        if (ls.debug && window.console && window.console.log) {
-            window.console.log(obj);
-        }
-    };    
 
 }(jQuery));
