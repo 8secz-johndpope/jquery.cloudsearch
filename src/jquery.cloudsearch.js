@@ -19,9 +19,8 @@
             unit: 'K',
             maxDistance: null
         },
-        searchParms: {
-            q: "matchall",
-            "q.parser": "structured",
+        searchParams: {
+            q: "",
             return: "_all_fields",
             size: 10, // page size
             sort: "_score desc",
@@ -98,13 +97,20 @@
 
         if (options) {
             //Default options.
-            if (options.googleGeocodeApi) options.googleGeocodeApi = $.extend(ls.googleGeocodeApi, options.googleGeocodeApi);
-            if (options.searchParms) options.searchParms = $.extend(ls.searchParms, options.searchParms);
-            if (options.facets) options.facets = $.extend(ls.facets, options.facets);
-            if (options.facetsApplied) options.facetsApplied = $.extend(ls.facetsApplied, options.facetsApplied);
-            if (options.results) options.results = $.extend(ls.results, options.results);
-            if (options.geoSearch) options.geoSearch = $.extend(ls.geoSearch, options.geoSearch);
-            if (options.urlParameters) options.urlParameters = $.extend(ls.urlParameters, options.urlParameters);
+            if (options.googleGeocodeApi) 
+                options.googleGeocodeApi = $.extend(ls.googleGeocodeApi, options.googleGeocodeApi);
+            if (options.searchParams) 
+                options.searchParams = $.extend(ls.searchParams, options.searchParams);
+            if (options.facets) 
+                options.facets = $.extend(ls.facets, options.facets);
+            if (options.facetsApplied) 
+                options.facetsApplied = $.extend(ls.facetsApplied, options.facetsApplied);
+            if (options.results) 
+                options.results = $.extend(ls.results, options.results);
+            if (options.geoSearch) 
+                options.geoSearch = $.extend(ls.geoSearch, options.geoSearch);
+            if (options.urlParameters) 
+                options.urlParameters = $.extend(ls.urlParameters, options.urlParameters);
             ls = $.extend(ls, options);
 
             checkUrlParameters();
@@ -134,7 +140,6 @@
         return this;
 
     };
-
 
     /**
      * Handlers
@@ -228,7 +233,7 @@
             return;
         
         //Clear the container if skip is 0 or if the clear is forced by setting
-        if (rs.alwaysClearContainer || ls.searchParms.skip == 0)
+        if (rs.alwaysClearContainer || ls.searchParams.skip == 0)
             c.html('');
                 
         $(data["hits"]["hit"]).each(function (i, v) {
@@ -300,7 +305,7 @@
 
         c.html('');
 
-        $(ls.searchParms.facets).each(function (i, v) {
+        $(ls.searchParams.facets).each(function (i, v) {
 
             //Ignore the faceting options if any
             if (v.indexOf(',') != -1)
@@ -393,17 +398,18 @@
             debug(ls.geoSearch.lat);
             debug(ls.geoSearch.lng);
             local.isGeoSearch = true;
-            if (!ls.searchParms.orderby || ls.searchParms.orderby.indexOf(ls.geoSearch.fieldName) == 0) {
+            if (!ls.searchParams.orderby || ls.searchParams.orderby.indexOf(ls.geoSearch.fieldName) == 0) {
                 var orderby = "geo.distance(" + ls.geoSearch.cloudFieldName;
                 orderby += ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")')";
-                if (ls.searchParms.orderby && ls.searchParms.orderby.indexOf(' desc') != -1) orderby += ' desc';
-                ls.searchParms.orderby = orderby;
+                if (ls.searchParams.orderby && ls.searchParams.orderby.indexOf(' desc') != -1) orderby += ' desc';
+                ls.searchParams.orderby = orderby;
             }
         }
 
         var f = null;
         //Save the current filter
-        var previousFilter = ls.searchParms.filter;
+
+        var previousFilter = ls.searchParams.filter;
 
         //Apply Facet Filters
         if (ls.facetsSelected.length > 0) {
@@ -417,7 +423,7 @@
             f = facetFilter.join(' ' + ls.facets.searchMode + ' ');
 
             if (previousFilter)
-                f = ls.searchParms.filter + ' ' + ls.facets.searchMode + ' ' + f;
+                f = ls.searchParams.filter + ' ' + ls.facets.searchMode + ' ' + f;
 
         }
 
@@ -433,7 +439,7 @@
         }
         
         if (f)
-            ls.searchParms.filter = f;
+            ls.searchParams.filter = f;
         
         var settings = {
             "crossDomain": true,
@@ -445,8 +451,8 @@
                 "X-Api-Key": ls.cloudSearch.key,
                 "Cache-Control": "no-cache",
             },
-            "data": ls.searchParms
-        }
+            "data": ls.searchParams
+        };
 
         $.ajax(settings).done(function (response) {
             local.totalResults = response.hits.found > 0 ? response.hits.found : -1;
@@ -454,7 +460,7 @@
         });
 
         //Return the filter to the original state
-        // ls.searchParms.filter = previousFilter;
+        // ls.searchParams.filter = previousFilter;
     }
 
 
@@ -543,7 +549,7 @@
         }
 
         //Apply Parameters
-        if (search) ls.searchParms.q = search;
+        if (search) ls.searchParams.q = search;
         if (latitude && longitude) {
             ls.geoSearch.lat = latitude;
             ls.geoSearch.lng = longitude;
