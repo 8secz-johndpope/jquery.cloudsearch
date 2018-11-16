@@ -23,11 +23,10 @@
             q: "",
             return: "_all_fields",
             size: 10, // page size
-            sort: "",
+            sort: "_score desc",
             start: 0, // offset starting result (pagination)
-            // facets: [],
-            // filter: null,
-            // orderby: null
+            facets: [],
+            filter: null,
         },
         facets: {
             facet: '<a href=\"#\"/>',
@@ -243,14 +242,14 @@
             //Populate the results
             if (!rs.template) {
                 //Without a template, just display all the fields with some content
-                var l = $('<dl/>')
+                var l = $('<ul/>')
                 var hr = $('<hr/>');
                 
                 $(Object.keys(fields)).each(function (j, k) {
                     if (!fields[k] || fields[k] == '')
                         return true;
-                    $('<dt/>').text(k).appendTo(l);
-                    $('<dd/>').text(fields[k]).appendTo(l);
+                    var item = $('<li/>').text(k + " : ").appendTo(l);
+                    $('<strong/>').text(fields[k]).appendTo(item);
                 });
                 l.appendTo(c);
                 hr.appendTo(c);
@@ -409,6 +408,7 @@
 
         var f = null;
         //Save the current filter
+
         var previousFilter = ls.searchParams.filter;
 
         //Apply Facet Filters
