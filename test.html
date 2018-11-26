@@ -1,0 +1,129 @@
+
+<!doctype html>
+<html>
+    <head>
+        
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+        <script src="dist/jquery.cloudsearch.js"></script>
+        <script src="dist/jquery.cloudsearch.suggester.js"></script>
+        <script src="dist/jquery-ui.min.js"></script>
+        <link rel="stylesheet" href="dist/jquery-ui.min.css" />
+
+    </head>
+    <body>
+        <h1>Hello World</h1>
+
+        <div class="input-wrapper">
+            <input type="text" id="searchInput" value="" placeholder="Start typing" />
+        </div>
+
+        <table>
+            <tbody>
+                <tr>
+                    <td>
+                        <div id="tps-aws-facet-list"></div>
+                    </td>
+                    <td>
+                        <div id="tps-aws-active-facets"></div>
+                        <div id="tps-aws-results"></div>
+                    </td>                    
+                </tr>
+            </tbody>
+        </table>
+
+        
+
+        <script>
+
+            var SearchOptions = {
+                cloudSearch: {
+                    url: 'https://1gcvo6mof9.execute-api.us-east-1.amazonaws.com/rcm-site-search-beta',
+                    // key: 'Hh4O1adBCAardxSjFyPK471wauiRZnvyJ5USNbkh'
+                },
+                searchParms: {
+                    // q: "",
+                    return: "documentname,nodealiaspath,description,content,classname,documentculture,_score",
+                    size: 20, // page size
+                    sort: "",
+                    start: 0, // offset starting result (pagination)
+                },
+                results: {
+                    container: '#tps-aws-results',                    
+                    alwaysClearContainer: false // used in pagination - for infinite scroll pagination support
+                },
+                urlParameters: {
+                    // address: 'a',
+                    // latitude: 'l',
+                    // longitude: 'ln',
+                    // latlong: null,
+                    search: 'searchtext'
+                },
+                facets: {
+                    container: "#tps-aws-facet-list"
+                },
+                onLoad: function(a,b) {
+                    console.log('results');
+                    console.log(this);
+                    console.log(a);                    
+                },
+                debug: true
+            }         
+
+            var suggesterOptions = {
+                cloudSuggester : {
+                    url: 'https://u1htsx5gpg.execute-api.us-east-1.amazonaws.com/rcm-site-search-suggester-beta',
+
+                },
+                searchParams: {
+                    suggester: 'rcmusic_suggester'
+                },
+
+            }
+
+            $(document).ready(function(){                
+                $(document).cloudsearch(SearchOptions);
+
+
+                $( '#searchInput' ).autocomplete({
+                    source: function(inputText, setSource) {
+                        suggesterOptions.searchParams.q = inputText.term;
+                        suggesterOptions.onLoad = function(a) {                            
+                            var suggArr = [];
+                            $.each(this.suggest.suggestions, function(k,v){
+                                suggArr.push(v.suggestion)
+                            });
+                            setSource(suggArr);
+                        }
+                        var suggestionObj = $(document).cloudsearchSuggester(suggesterOptions);
+                    }
+                });
+
+            });
+
+            tps_format_test = function(value, resultsObject) {
+                // console.log(value);
+                // console.log(resultsObject);
+                return value;
+            } 
+        </script>
+    </body>
+</html>
+
+
+<!-- 
+
+     var ls = {
+       
+        
+        results: {
+            container: '#results',
+            template: null,
+            onCreate: function () { },
+            alwaysClearContainer: false
+        },
+        
+        
+    };
+
+
+ -->
