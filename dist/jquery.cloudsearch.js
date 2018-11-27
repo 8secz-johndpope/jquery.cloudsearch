@@ -64,14 +64,38 @@
             container: '#results',
             template: null,
             onCreate: function () { },
-            alwaysClearContainer: false
+            pager: {
+                container: null,
+                renderPager: false,
+                loadMore: true,
+                appendPager: true,
+                pagerRangeIncrement: 5,
+                labels: {
+                    prev: 'previous',
+                    next: 'next',
+                    first: 'first',
+                    last: 'last',
+                    results: 'results for',
+                    load: 'load more',
+                    ada: {
+                        prev: 'previous page of results',
+                        next: 'next page of results',
+                        first: 'first page of results',
+                        last: 'last page of results',
+                        load: 'load more results'
+                    }
+                },
+                onRender: function () { },
+                onPageChange: function () { },
+            },
         },
         urlParameters: {
             address: 'a',
             latitude: 'l',
             longitude: 'ln',
             latlong: null,
-            search: 'q'
+            search: 'q',
+            page: 'p',
         },
         onResults: processResults,
         onLoad: function () { },
@@ -80,39 +104,31 @@
 
     //Internal Parameters
     var local = {
+        container: null,
+        totalPages: 0,
+        currentPage: 1,
+        pagerRange: [],
+        pagerRendered: false,
         waitingLatLong: false,
         isGeoSearch: false,
         totalResults: 0,
-        initialized: false
+        initialized: false,
+        rendered: false
     }
-    
+
     /**
      * jQuuery Plugin Definition
      */
 
     $.fn.cloudsearch = function (options, action) {
 
+        local.container = this;
+
         if (!action)
             action = 'search';
 
-        if (options) {
-            //Default options.
-            if (options.googleGeocodeApi) 
-                options.googleGeocodeApi = $.extend(ls.googleGeocodeApi, options.googleGeocodeApi);
-            if (options.searchParams) 
-                options.searchParams = $.extend(ls.searchParams, options.searchParams);
-            if (options.facets) 
-                options.facets = $.extend(ls.facets, options.facets);
-            if (options.facetsApplied) 
-                options.facetsApplied = $.extend(ls.facetsApplied, options.facetsApplied);
-            if (options.results) 
-                options.results = $.extend(ls.results, options.results);
-            if (options.geoSearch) 
-                options.geoSearch = $.extend(ls.geoSearch, options.geoSearch);
-            if (options.urlParameters) 
-                options.urlParameters = $.extend(ls.urlParameters, options.urlParameters);
-            ls = $.extend(ls, options);
-
+        if (options) {            
+            ls = $.extend(true, ls, options);            
             checkUrlParameters();
         }
 
@@ -150,6 +166,9 @@
 
         // loadFacets(data);
         loadResults(data);
+        // render pager        
+        renderPager(data);
+
 
         ls.onLoad.call(data, local);
     }
@@ -225,26 +244,26 @@
 
     //Display the results
     function loadResults(data) {
-        
+
         var rs = ls.results;
-        var c = $(rs.container);
+        var c = $(rs.container) ? $(rs.container) : $(local.container);
         
-        if (!c || !data["hits"]["hit"])    
+        if (!c || !data["hits"]["hit"])
             return;
-        
+
         //Clear the container if skip is 0 or if the clear is forced by setting
-        if (rs.alwaysClearContainer || ls.searchParams.skip == 0)
+        if (!rs.pager.loadMore || ls.searchParams.skip == 0)
             c.html('');
-                
+        
         $(data["hits"]["hit"]).each(function (i, v) {
-            
+
             var fields = v["fields"];
             //Populate the results
             if (!rs.template) {
                 //Without a template, just display all the fields with some content
                 var l = $('<ul/>')
                 var hr = $('<hr/>');
-                
+
                 $(Object.keys(fields)).each(function (j, k) {
                     if (!fields[k] || fields[k] == '')
                         return true;
@@ -260,10 +279,10 @@
                 //With template
                 var t = $(rs.template);
                 $(':not([data-cloudsearch-field=""])', t).not().each(function (y, z) {
-                    
+
                     var field = $(z).data('cloudsearchField');
                     var value = '';
-                    
+
                     if (field && v["fields"][field]) {
                         value = v["fields"][field];
                     } else if (field == ls.geoSearch.fieldName && local.isGeoSearch) {
@@ -291,7 +310,170 @@
                 rs.onCreate.call(t);
             }
         });
+        local.rendered = true;
+    }
 
+    /**
+     * 
+     * @param {*} data 
+     */
+    function renderPager(data) {
+        
+        var pg = ls.results.pager;
+        
+        if (pg.renderPager) {            
+            local.totalPages = Math.ceil(local.totalResults / ls.searchParams.size);
+            if(!local.pagerRendered) {
+                local.pagerRange = [ 1, pg.pagerRangeIncrement];
+            }
+            generatePagerLinks();            
+            // generatePagerText();
+            local.pagerRendered = true;
+        }        
+    }
+
+    /**
+     * 
+     */
+    function generatePagerLinks() {
+
+        var pg = ls.results.pager;
+        var c = $(pg.container);
+
+        if (!c)
+            return;
+
+        if(pg.loadMore) {
+            
+            c.append(addPagerButton('load'));
+            
+        } else {
+
+            console.log(local.pagerRange);
+
+            if(local.currentPage < local.pagerRange[0]) {
+                local.pagerRange[0] = local.pagerRange[0] - pg.pagerRangeIncrement;
+                local.pagerRange[1] = local.pagerRange[1] - pg.pagerRangeIncrement;
+            } else if(local.currentPage > local.pagerRange[1]) {
+                local.pagerRange[0] = local.pagerRange[0] + pg.pagerRangeIncrement;
+                local.pagerRange[1] = local.pagerRange[1] + pg.pagerRangeIncrement;
+            }
+
+            var items;
+            c.append(addPagerButton('prev'));
+
+            if(!local.pagerRendered) {
+                items = $('<div/>').addClass('pager-nav-items');
+            } else {
+                items = $('.pager-nav-items').empty();
+            }
+
+            var i = local.pagerRange[0];
+            while(i <= local.pagerRange[1] && i <= local.totalPages) {
+                var pagerLink = $('<a href="#">').data('targetPage',i);
+                if(i === local.currentPage) {
+                    pagerLink = $('<span></span>');
+                }
+                pagerLink.text(i);
+                items.append(pagerLink);
+                i++;
+            }
+
+            if( !c ) {                
+                c.append(addPagerButton('next'));
+                $(local.container).after(c)
+            } else {
+                c.append(items);            
+                c.append(addPagerButton('next'));
+            } 
+
+        }
+
+        if(!local.pagerRendered) {
+            addPagerListeners();
+        }
+
+        // c;
+    };
+
+    /**
+     * 
+     * @param {*} type 
+     */
+    function addPagerButton(type) {
+
+        var pg = ls.results.pager;
+        var button = $('<a/>').text(pg.labels[type]).addClass('pager-navs').addClass('pager-' + type).attr('href','#');
+
+        if(local.pagerRendered) {
+            button = $('.pager-navs.pager-' + type);
+        }
+        
+        if (type == 'prev') {
+            if (local.currentPage > 1) {
+                button.data('disabled', false).removeClass('disabled');
+            } else {
+                button.data('disabled', true).addClass('disabled');
+            }
+        } else {
+            if(local.totalPages > local.currentPage) {
+                button.data('disabled', false).removeClass('disabled');
+            }  else {
+                button.data('disabled', true).addClass('disabled');
+            }        
+        }
+
+        return button;
+
+    }
+
+    /**
+     * 
+     */
+    function addPagerListeners() {
+
+        $(document).on('click', '.pager-prev, .pager-next, .pager-load', function(e){
+            e.preventDefault();
+            if( !$(this).data('disabled') ) {
+                handlePager($(this).hasClass('pager-prev'));
+            }
+        });
+
+        $(document).on('click','.pager-nav-items a',function(e){
+            e.preventDefault();
+            skipToPage($(this).data('targetPage'));
+        });
+    }
+
+    /**
+     * 
+     * @param {*} next 
+     */
+    function handlePager(next) {
+        var pg = ls.results.pager; 
+
+        if(ls.searchParams.size && local.currentPage && local.rendered) {        
+            local.rendered = false;                
+            // go to next page of results
+            if(!next) {
+                local.currentPage = local.currentPage + 1;
+            } else {
+                local.currentPage = local.currentPage - 1;
+            }
+            
+            ls.searchParams.start = (local.currentPage - 1) * ls.searchParams.size;         
+            search();
+        }
+    }
+
+    /**
+     * 
+     * @param {*} num 
+     */
+    function skipToPage(num) {
+        local.currentPage = num;
+        ls.searchParams.skip = (local.currentPage - 1) * ls.searchParams.size;       
+        search();            
     }
 
     //Load the facets according to the results
@@ -386,7 +568,6 @@
 
     //Execute the AJAX call to AWS Cloud Search
     function search() {
-
         local.isGeoSearch = false;
 
         if (local.waitingLatLong)
@@ -417,7 +598,7 @@
             ls.facetsSelected.forEach(function (item, index) {
                 var p = item.split('|');
                 // apply filter and escape single quotes in value (')
-                facetFilter.push(p[0] + '/any(m: m eq \'' + p[1].replace(/[']/gi,'\'\'') + '\')');
+                facetFilter.push(p[0] + '/any(m: m eq \'' + p[1].replace(/[']/gi, '\'\'') + '\')');
             });
 
             f = facetFilter.join(' ' + ls.facets.searchMode + ' ');
@@ -431,16 +612,16 @@
         if (local.isGeoSearch && ls.geoSearch.maxDistance) {
             debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
             var geoFilter = "geo.distance(" + ls.geoSearch.cloudFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
-            if(f) {
+            if (f) {
                 f += ' and ' + geoFilter
             } else {
                 f = geoFilter;
             }
         }
-        
+
         if (f)
             ls.searchParams.filter = f;
-        
+
         var settings = {
             "crossDomain": true,
             "url": ls.cloudSearch.url,
@@ -569,3 +750,4 @@
 
 
 }(jQuery));
+
