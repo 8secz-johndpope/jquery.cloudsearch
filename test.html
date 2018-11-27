@@ -6,8 +6,8 @@
         <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
         <script src="dist/jquery.cloudsearch.js"></script>
         <script src="dist/jquery.cloudsearch.suggester.js"></script>
-        <script src="dist/jquery-ui.min.js"></script>
-        <link rel="stylesheet" href="dist/jquery-ui.min.css" />
+        <!-- <script src="dist/jquery-ui.min.js"></script>
+        <link rel="stylesheet" href="dist/jquery-ui.min.css" /> -->
 
     </head>
     <body>
@@ -26,6 +26,7 @@
                     <td>
                         <div id="tps-aws-active-facets"></div>
                         <div id="tps-aws-results"></div>
+                        <div id="tps-aws-results-pager"></div>
                     </td>                    
                 </tr>
             </tbody>
@@ -49,22 +50,27 @@
                 },
                 results: {
                     container: '#tps-aws-results',                    
-                    alwaysClearContainer: false // used in pagination - for infinite scroll pagination support
+                    pager: {
+                        renderPager: true,
+                        container: '#tps-aws-results-pager',
+                        loadMore: false,
+                        pagerRangeIncrement: 5,
+                    },
                 },
                 urlParameters: {
                     // address: 'a',
                     // latitude: 'l',
                     // longitude: 'ln',
                     // latlong: null,
-                    search: 'searchtext'
+                    // search: ''
                 },
                 facets: {
                     container: "#tps-aws-facet-list"
                 },
                 onLoad: function(a,b) {
-                    console.log('results');
-                    console.log(this);
-                    console.log(a);                    
+                    // console.log('results');
+                    // console.log(this);
+                    // console.log(a);                    
                 },
                 debug: true
             }         
@@ -81,9 +87,9 @@
             }
 
             $(document).ready(function(){                
-                $(document).cloudsearch(SearchOptions);
+                $('#tps-aws-results').cloudsearch(SearchOptions);
 
-
+                /*
                 $( '#searchInput' ).autocomplete({
                     source: function(inputText, setSource) {
                         suggesterOptions.searchParams.q = inputText.term;
@@ -97,6 +103,7 @@
                         var suggestionObj = $(document).cloudsearchSuggester(suggesterOptions);
                     }
                 });
+                */
 
             });
 
