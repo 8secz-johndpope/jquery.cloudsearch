@@ -20,13 +20,12 @@
             maxDistance: null
         },
         searchParams: {
-            q: "",
+            q: "matchall",
             return: "_all_fields",
             size: 10, // page size
             sort: "_score desc",
             start: 0, // offset starting result (pagination)
-            facets: [],
-            filter: null,
+            "q.parser" : "structured",
         },
         facets: {
             facet: '<a href=\"#\"/>',

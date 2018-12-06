@@ -41,12 +41,15 @@
                     url: 'https://1gcvo6mof9.execute-api.us-east-1.amazonaws.com/rcm-site-search-beta',
                     // key: 'Hh4O1adBCAardxSjFyPK471wauiRZnvyJ5USNbkh'
                 },
-                searchParms: {
-                    // q: "",
-                    return: "documentname,nodealiaspath,description,content,classname,documentculture,_score",
+                searchParams: {
+                    q: "matchall",
+                    return: "documentname,menuitemname,description,menuitemsummary,nodealiaspath,classname,content_type,_score",
                     size: 20, // page size
-                    sort: "",
+                    sort: "_score desc",
                     start: 0, // offset starting result (pagination)
+                    "q.parser" : "structured",
+                    "q.options" : "{ fields: ['documentname^5','description^2', 'menuitemsummary^2', 'content'] }",
+                    "facet.classname" : "{}"
                 },
                 results: {
                     container: '#tps-aws-results',                    
