@@ -43,13 +43,16 @@
                 },
                 searchParams: {
                     q: "matchall",
-                    return: "documentname,menuitemname,description,menuitemsummary,nodealiaspath,classname,content_type,_score",
+                    return: "_all_fields",
                     size: 20, // page size
                     sort: "_score desc",
                     start: 0, // offset starting result (pagination)
                     "q.parser" : "structured",
                     "q.options" : "{ fields: ['documentname^5','description^2', 'menuitemsummary^2', 'content'] }",
-                    "facet.classname" : "{}"
+                    "facet.classname" : "{}",
+                    // fq: "classname:'CMS.MenuItem'"
+                    // fq: "(or field=classname 'TPSDT.Card')"
+
                 },
                 results: {
                     container: '#tps-aws-results',                    

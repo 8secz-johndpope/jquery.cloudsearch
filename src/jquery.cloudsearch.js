@@ -635,9 +635,14 @@
         };
 
         $.ajax(settings).done(function (response) {
-            local.totalResults = response.hits.found > 0 ? response.hits.found : -1;
-            ls.onResults.call(response, local);
-        });
+            if(response.hits) {
+                local.totalResults = response.hits.found > 0 ? response.hits.found : -1;
+                ls.onResults.call(response, local);
+            }
+            else if(response.error) {
+                console.log(response.error);
+            }
+         });
 
         //Return the filter to the original state
         // ls.searchParams.filter = previousFilter;
