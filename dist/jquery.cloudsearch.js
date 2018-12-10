@@ -181,17 +181,13 @@
 
         if (ls.facetsSelected.indexOf(value) != -1)
             return;
-
-        console.log(value);
         
-        ls.facetsSelected.push(value);
-        console.log(ls.facetsSelected);        
-        ls.facetsApplied.onChange.call(ls.facetsSelected.slice(0));
-        
+        ls.facetsSelected.push(value);             
+        ls.facetsApplied.onChange.call(ls.facetsSelected.slice(0));    
         ls.facets.onFacetSelect.call(ls.facetsSelected.slice(0));        
         /*    
-        search();
         */
+        search();
     }
 
     //Default action when a facet is selected
@@ -216,7 +212,8 @@
             .attr(sfs.extraAttributes)
             .data('value', lastFacet)
             .addClass(sfs.class)
-            .on('click', function () {
+            .on('click', function (e) {
+                e.preventDefault();
                 ls.facetsSelected
                     .splice(
                         ls.facetsSelected.indexOf($(this).data('value')), 1
@@ -491,8 +488,6 @@
 
         c.html('');
 
-        console.log(ls.facets.displayFacets);
-
         $(Object.keys(ls.facetsDictionary)).each(function (i, v) {
 
         //     //Ignore the faceting options if any
@@ -500,8 +495,6 @@
         //         v = v.split(',')[0];
 
             if (data["facets"][v]) {
-
-                console.log( 'facets exists for : ' + v );
 
         //         //Facet's Title
                 var tt = ls.facetsDictionary && ls.facetsDictionary[v] ?
@@ -598,9 +591,7 @@
         var f = null;
         //Save the current filter
 
-        var previousFilter = ls.searchParams.filter;
-        
-        console.log(Object.keys( ls.facetsDictionary ));
+        var previousFilter = ls.searchParams.fq;
         
         if( ls.facetsDictionary ) {
             $(Object.keys(ls.facetsDictionary)).each(function(k,v){
@@ -614,14 +605,13 @@
             ls.facetsSelected.forEach(function (item, index) {
                 var p = item.split('|');
                 // apply filter and escape single quotes in value (')
-                facetFilter.push(p[0] + '/any(m: m eq \'' + p[1].replace(/[']/gi, '\'\'') + '\')');
+                facetFilter.push('' + p[0] + ': \'' + p[1].replace(/[']/gi, '\'\'') + '\'');
             });
 
-            f = facetFilter.join(' ' + ls.facets.searchMode + ' ');
-
+            f = '(' + ls.facets.searchMode + ' ' + facetFilter.join(' ') + ')';
+            
             if (previousFilter)
-                f = ls.searchParams.filter + ' ' + ls.facets.searchMode + ' ' + f;
-
+                f = '(' + ls.facets.searchMode + ' ' + ls.searchParams.fq + ' ' + f + ')';
         }
 
         //Apply geo distance filter if configured
@@ -636,7 +626,9 @@
         }
 
         if (f)
-            ls.searchParams.filter = f;
+            ls.searchParams.fq = f;
+
+        console.log(ls.searchParams.fq);
 
         var settings = {
             "crossDomain": true,
@@ -662,7 +654,7 @@
          });
 
         //Return the filter to the original state
-        // ls.searchParams.filter = previousFilter;
+        ls.searchParams.fq = previousFilter;
     }
 
 
