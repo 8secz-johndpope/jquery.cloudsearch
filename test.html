@@ -20,8 +20,8 @@
         <table>
             <tbody>
                 <tr>
-                    <td>
-                        <div id="tps-aws-facet-list"></div>
+                    <td style="vertical-align: top;">
+                        <div id="tps-aws-facet-list" style="outline: 1px solid red;"></div>
                     </td>
                     <td>
                         <div id="tps-aws-active-facets"></div>
@@ -48,9 +48,11 @@
                     sort: "_score desc",
                     start: 0, // offset starting result (pagination)
                     "q.parser" : "structured",
-                    "q.options" : "{ fields: ['documentname^5','description^2', 'menuitemsummary^2', 'content'] }",
-                    "facet.classname" : "{}",
-                    // fq: "classname:'CMS.MenuItem'"
+                    "q.options" : "{ fields: ['documentname^5','description^2', 'menuitemsummary^2', 'content'] }",                    
+                    //"facet.classname" : "{}",
+                    //"facet.bioartistgenres" : "{}",
+                    // fq: "(or classname:  'CMS.MenuItem' classname: 'TPSDT.NewsArticle' classname: 'TPSDT.Event' classname: 'TPSDT.Bio' )"
+                    fq: "classname: 'TPSDT.Bio'"
                     // fq: "(or field=classname 'TPSDT.Card')"
 
                 },
@@ -71,7 +73,16 @@
                     // search: ''
                 },
                 facets: {
+                    displayFacets: [ 'classname', 'bioartistgenres', 'biotypes' ],
                     container: "#tps-aws-facet-list"
+                },
+                facetsApplied: {
+                    container: '#tps-aws-active-facets',
+                },
+                facetsDictionary: { 
+                    "classname" : "Page Type",
+                    "bioartistgenres" : "Bio Artist Genre(s)",
+                    "biotypes"  : "Bio Types"
                 },
                 onLoad: function(a,b) {
                     // console.log('results');

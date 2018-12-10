@@ -28,6 +28,7 @@
             "q.parser" : "structured",
         },
         facets: {
+            displayFacets: [ ],
             facet: '<a href=\"#\"/>',
             facetClass: 'facet',
             titleWrapper: "<h2/>",
@@ -163,7 +164,7 @@
     function processResults() {
         var data = this;
 
-        // loadFacets(data);
+        loadFacets(data);
         loadResults(data);
         // render pager        
         renderPager(data);
@@ -181,10 +182,16 @@
         if (ls.facetsSelected.indexOf(value) != -1)
             return;
 
+        console.log(value);
+        
         ls.facetsSelected.push(value);
+        console.log(ls.facetsSelected);        
         ls.facetsApplied.onChange.call(ls.facetsSelected.slice(0));
-        ls.facets.onFacetSelect.call(ls.facetsSelected.slice(0));
+        
+        ls.facets.onFacetSelect.call(ls.facetsSelected.slice(0));        
+        /*    
         search();
+        */
     }
 
     //Default action when a facet is selected
@@ -346,9 +353,7 @@
             
             c.append(addPagerButton('load'));
             
-        } else {
-
-            console.log(local.pagerRange);
+        } else {            
 
             if(local.currentPage < local.pagerRange[0]) {
                 local.pagerRange[0] = local.pagerRange[0] - pg.pagerRangeIncrement;
@@ -481,20 +486,24 @@
         var c = $(fs.container);
 
         //Check if the containers was defiend and if the facets were part of the results
-        if (!c || !data["@search.facets"])
+        if (!c || !data["facets"])
             return;
 
         c.html('');
 
-        $(ls.searchParams.facets).each(function (i, v) {
+        console.log(ls.facets.displayFacets);
 
-            //Ignore the faceting options if any
-            if (v.indexOf(',') != -1)
-                v = v.split(',')[0];
+        $(Object.keys(ls.facetsDictionary)).each(function (i, v) {
 
-            if (data["@search.facets"][v]) {
+        //     //Ignore the faceting options if any
+        //     if (v.indexOf(',') != -1)
+        //         v = v.split(',')[0];
 
-                //Facet's Title
+            if (data["facets"][v]) {
+
+                console.log( 'facets exists for : ' + v );
+
+        //         //Facet's Title
                 var tt = ls.facetsDictionary && ls.facetsDictionary[v] ?
                     ls.facetsDictionary[v] : v;
 
@@ -514,7 +523,7 @@
                 var countFacets = 0;
 
                 //Facets
-                $(data["@search.facets"][v]).each(function (j, k) {
+                $(data["facets"][v]['buckets']).each(function (j, k) {
 
                     //Create the facet
                     var f = $(fs.facet)
@@ -590,6 +599,14 @@
         //Save the current filter
 
         var previousFilter = ls.searchParams.filter;
+        
+        console.log(Object.keys( ls.facetsDictionary ));
+        
+        if( ls.facetsDictionary ) {
+            $(Object.keys(ls.facetsDictionary)).each(function(k,v){
+                ls.searchParams['facet.'+v] = '{}';                
+            });
+        }
 
         //Apply Facet Filters
         if (ls.facetsSelected.length > 0) {
@@ -640,7 +657,7 @@
                 ls.onResults.call(response, local);
             }
             else if(response.error) {
-                console.log(response.error);
+                debug(response.error);
             }
          });
 
