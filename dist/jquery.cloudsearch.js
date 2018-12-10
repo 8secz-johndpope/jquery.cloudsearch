@@ -20,15 +20,15 @@
             maxDistance: null
         },
         searchParams: {
-            q: "",
+            q: "matchall",
             return: "_all_fields",
             size: 10, // page size
             sort: "_score desc",
             start: 0, // offset starting result (pagination)
-            facets: [],
-            filter: null,
+            "q.parser" : "structured",
         },
         facets: {
+            displayFacets: [ ],
             facet: '<a href=\"#\"/>',
             facetClass: 'facet',
             titleWrapper: "<h2/>",
@@ -164,7 +164,7 @@
     function processResults() {
         var data = this;
 
-        // loadFacets(data);
+        loadFacets(data);
         loadResults(data);
         // render pager        
         renderPager(data);
@@ -181,10 +181,12 @@
 
         if (ls.facetsSelected.indexOf(value) != -1)
             return;
-
-        ls.facetsSelected.push(value);
-        ls.facetsApplied.onChange.call(ls.facetsSelected.slice(0));
-        ls.facets.onFacetSelect.call(ls.facetsSelected.slice(0));
+        
+        ls.facetsSelected.push(value);             
+        ls.facetsApplied.onChange.call(ls.facetsSelected.slice(0));    
+        ls.facets.onFacetSelect.call(ls.facetsSelected.slice(0));        
+        /*    
+        */
         search();
     }
 
@@ -210,7 +212,8 @@
             .attr(sfs.extraAttributes)
             .data('value', lastFacet)
             .addClass(sfs.class)
-            .on('click', function () {
+            .on('click', function (e) {
+                e.preventDefault();
                 ls.facetsSelected
                     .splice(
                         ls.facetsSelected.indexOf($(this).data('value')), 1
@@ -347,9 +350,7 @@
             
             c.append(addPagerButton('load'));
             
-        } else {
-
-            console.log(local.pagerRange);
+        } else {            
 
             if(local.currentPage < local.pagerRange[0]) {
                 local.pagerRange[0] = local.pagerRange[0] - pg.pagerRangeIncrement;
@@ -482,20 +483,20 @@
         var c = $(fs.container);
 
         //Check if the containers was defiend and if the facets were part of the results
-        if (!c || !data["@search.facets"])
+        if (!c || !data["facets"])
             return;
 
         c.html('');
 
-        $(ls.searchParams.facets).each(function (i, v) {
+        $(Object.keys(ls.facetsDictionary)).each(function (i, v) {
 
-            //Ignore the faceting options if any
-            if (v.indexOf(',') != -1)
-                v = v.split(',')[0];
+        //     //Ignore the faceting options if any
+        //     if (v.indexOf(',') != -1)
+        //         v = v.split(',')[0];
 
-            if (data["@search.facets"][v]) {
+            if (data["facets"][v]) {
 
-                //Facet's Title
+        //         //Facet's Title
                 var tt = ls.facetsDictionary && ls.facetsDictionary[v] ?
                     ls.facetsDictionary[v] : v;
 
@@ -515,7 +516,7 @@
                 var countFacets = 0;
 
                 //Facets
-                $(data["@search.facets"][v]).each(function (j, k) {
+                $(data["facets"][v]['buckets']).each(function (j, k) {
 
                     //Create the facet
                     var f = $(fs.facet)
@@ -537,7 +538,8 @@
 
                     //Do not display selected facets
                     if (ls.facetsSelected.indexOf(v + '|' + k.value) != -1)
-                        return true;
+                        f.addClass('selected-facet');
+                        // return true;
 
                     if (fs.wrapper)
                         $(fs.wrapper).addClass(fs.wrapperClass).append(f).appendTo(w);
@@ -590,7 +592,13 @@
         var f = null;
         //Save the current filter
 
-        var previousFilter = ls.searchParams.filter;
+        var previousFilter = ls.searchParams.fq;
+        
+        if( ls.facetsDictionary ) {
+            $(Object.keys(ls.facetsDictionary)).each(function(k,v){
+                ls.searchParams['facet.'+v] = '{}';                
+            });
+        }
 
         //Apply Facet Filters
         if (ls.facetsSelected.length > 0) {
@@ -598,14 +606,13 @@
             ls.facetsSelected.forEach(function (item, index) {
                 var p = item.split('|');
                 // apply filter and escape single quotes in value (')
-                facetFilter.push(p[0] + '/any(m: m eq \'' + p[1].replace(/[']/gi, '\'\'') + '\')');
+                facetFilter.push('' + p[0] + ': \'' + p[1].replace(/[']/gi, '\'\'') + '\'');
             });
 
-            f = facetFilter.join(' ' + ls.facets.searchMode + ' ');
-
+            f = '(' + ls.facets.searchMode + ' ' + facetFilter.join(' ') + ')';
+            
             if (previousFilter)
-                f = ls.searchParams.filter + ' ' + ls.facets.searchMode + ' ' + f;
-
+                f = '(' + ls.facets.searchMode + ' ' + ls.searchParams.fq + ' ' + f + ')';
         }
 
         //Apply geo distance filter if configured
@@ -620,7 +627,7 @@
         }
 
         if (f)
-            ls.searchParams.filter = f;
+            ls.searchParams.fq = f;
 
         var settings = {
             "crossDomain": true,
@@ -636,12 +643,17 @@
         };
 
         $.ajax(settings).done(function (response) {
-            local.totalResults = response.hits.found > 0 ? response.hits.found : -1;
-            ls.onResults.call(response, local);
-        });
+            if(response.hits) {
+                local.totalResults = response.hits.found > 0 ? response.hits.found : -1;
+                ls.onResults.call(response, local);
+            }
+            else if(response.error) {
+                debug(response.error);
+            }
+         });
 
         //Return the filter to the original state
-        // ls.searchParams.filter = previousFilter;
+        ls.searchParams.fq = previousFilter;
     }
 
 
@@ -730,7 +742,20 @@
         }
 
         //Apply Parameters
-        if (search) ls.searchParams.q = search;
+        if (search) {
+            
+            if(ls.searchParams['q.parser'] == 'structured') {
+                ls.searchParams.q = '(or ';
+                $(search.split(' ')).each(function(k,v){
+                    // console.log(v);
+                    ls.searchParams.q += '(term \''+v+'\')';
+                    ls.searchParams.q += '(prefix \''+v+'\')';
+                });
+                ls.searchParams.q += ')';
+            } else {
+                ls.searchParams.q = search;
+            }
+        }
         if (latitude && longitude) {
             ls.geoSearch.lat = latitude;
             ls.geoSearch.lng = longitude;
