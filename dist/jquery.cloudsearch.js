@@ -538,7 +538,8 @@
 
                     //Do not display selected facets
                     if (ls.facetsSelected.indexOf(v + '|' + k.value) != -1)
-                        return true;
+                        f.addClass('selected-facet');
+                        // return true;
 
                     if (fs.wrapper)
                         $(fs.wrapper).addClass(fs.wrapperClass).append(f).appendTo(w);
@@ -627,8 +628,6 @@
 
         if (f)
             ls.searchParams.fq = f;
-
-        console.log(ls.searchParams.fq);
 
         var settings = {
             "crossDomain": true,
@@ -743,7 +742,20 @@
         }
 
         //Apply Parameters
-        if (search) ls.searchParams.q = search;
+        if (search) {
+            
+            if(ls.searchParams['q.parser'] == 'structured') {
+                ls.searchParams.q = '(or ';
+                $(search.split(' ')).each(function(k,v){
+                    // console.log(v);
+                    ls.searchParams.q += '(term \''+v+'\')';
+                    ls.searchParams.q += '(prefix \''+v+'\')';
+                });
+                ls.searchParams.q += ')';
+            } else {
+                ls.searchParams.q = search;
+            }
+        }
         if (latitude && longitude) {
             ls.geoSearch.lat = latitude;
             ls.geoSearch.lng = longitude;
