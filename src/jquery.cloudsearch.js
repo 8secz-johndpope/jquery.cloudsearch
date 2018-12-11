@@ -177,7 +177,7 @@
     function defaultFacetClick(e) {
         e.preventDefault();
 
-        var value = $(this).data('cloudsearchFacetName') + '|' + $(this).data('cloudsearchFacetValue');
+        var value = $(this).data('cloudsearchFacetName') + '||' + $(this).data('cloudsearchFacetValue');
 
         if (ls.facetsSelected.indexOf(value) != -1)
             return;
@@ -201,7 +201,7 @@
         var lastFacet = this.pop();
         var c = $(sfs.container);
 
-        var fs = lastFacet.split('|');
+        var fs = lastFacet.split('||');
 
         //Ignore if necessary
         if (sfs.ignoreFacets.indexOf(fs[0]) != -1)
@@ -496,7 +496,7 @@
 
             if (data["facets"][v]) {
 
-        //         //Facet's Title
+                //Facet's Title
                 var tt = ls.facetsDictionary && ls.facetsDictionary[v] ?
                     ls.facetsDictionary[v] : v;
 
@@ -550,15 +550,17 @@
                 });
 
                 //Group Wrapper
-                if (fs.groupWrapper) {
+                if (fs.groupWrapper && countFacets > 0) {
                     var gw = $(fs.groupWrapper).addClass(fs.groupWrapperClass);
                     c.append(gw);
                     title.appendTo(gw);
                     w.appendTo(gw);
                 }
 
-                if (countFacets == 0)
+                if (countFacets == 0) {
                     title.remove();
+                    w.remove();
+                }
 
             }
         });
@@ -604,7 +606,7 @@
         if (ls.facetsSelected.length > 0) {
             var facetFilter = [];
             ls.facetsSelected.forEach(function (item, index) {
-                var p = item.split('|');
+                var p = item.split('||');
                 // apply filter and escape single quotes in value (')
                 facetFilter.push('' + p[0] + ': \'' + p[1].replace(/[']/gi, '\'\'') + '\'');
             });

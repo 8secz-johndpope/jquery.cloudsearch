@@ -38,23 +38,8 @@
 
             var SearchOptions = {
                 cloudSearch: {
-                    url: 'https://1gcvo6mof9.execute-api.us-east-1.amazonaws.com/rcm-site-search-beta',
+                    url: 'https:\/\/1gcvo6mof9.execute-api.us-east-1.amazonaws.com\/rcm-site-search-beta',
                     // key: 'Hh4O1adBCAardxSjFyPK471wauiRZnvyJ5USNbkh'
-                },
-                searchParams: {
-                    q: "(or (prefix 'mus'))",
-                    return: "_all_fields",
-                    size: 20, // page size
-                    sort: "_score desc",
-                    start: 0, // offset starting result (pagination)
-                    "q.parser" : "structured",
-                    "q.options" : "{ fields: ['documentname^5','description^2', 'menuitemsummary^2', 'content'] }",                    
-                    //"facet.classname" : "{}",
-                    //"facet.bioartistgenres" : "{}",
-                    // fq: "(or classname:  'CMS.MenuItem' classname: 'TPSDT.NewsArticle' classname: 'TPSDT.Event' classname: 'TPSDT.Bio' )"
-                    // fq: "classname: 'TPSDT.Bio'"
-                    // fq: "(or field=classname 'TPSDT.Card')"
-
                 },
                 results: {
                     container: '#tps-aws-results',                    
@@ -64,32 +49,56 @@
                         loadMore: false,
                         pagerRangeIncrement: 5,
                     },
-                },
-                urlParameters: {
-                    // address: 'a',
-                    // latitude: 'l',
-                    // longitude: 'ln',
-                    // latlong: null,
-                    // search: ''
+                    template: '<div class="cell"><div data-cloudsearch-field="documentname"  ></div></div>',
                 },
                 facets: {
-                    displayFacets: [ 'classname', 'bioartistgenres', 'biotype' ],
-                    container: "#tps-aws-facet-list"
+                    container: "#tps-aws-facet-list",  
+                    facet: '<a href=\"#\"/>',
+                    facetClass: 'facet search-filter-options',
+                    countWrapper: '<span/>',
+                    countWrapperClass: 'facet-count',
+                    titleWrapper: '',
+                    title: "<a href=\"#\" />",
+                    titleClass: "accordion-title",
+                    titleWrapperClass: "facet-title",
+                    wrapperContainer: "<div data-tab-content />",
+                    wrapperContainerClass: "accordion-content facet-accordion-content content-area",
+                    wrapper: "<div>",
+                    wrapperClass: "facet-item",
+                    groupWrapper: '<li data-accordion-item />',
+                    groupWrapperClass: 'accordion-item tps-accordion-item is-active'
                 },
                 facetsApplied: {
                     container: '#tps-aws-active-facets',
                 },
+                searchParams: {
+                    q: "matchall",
+                    return: "_all_fields",
+                    size: 20, // page size
+                    sort: "_score desc",
+                    start: 0, // offset starting result (pagination)
+                    "q.parser" : "structured",
+                    "q.options" : "{ fields: [ 'menuitemname^5','description^2', 'menuitemsummary^2' ] }",                    
+                    fq: "classname: 'TPSDT.Bio'"
+
+                },
                 facetsDictionary: { 
-                    "classname" : "Page Type",
-                    "bioartistgenres" : "Bio Artist Genre(s)",
-                    "biotypes"  : "Bio Types"
+                    "classname"  : "Page Types",
+                    "biotype"  : "Bio Types",
+                    "bioartistgenres" : "Artist Genre(s)",
+                    "bioexamexaminertype" : "Examiner Type (Ex)",
+                    "biocorpstaffexaminertype" : "Examiner Type (CS)",
+                    "bioseniorstaffexaminertype" : "Examiner Type (SS)",
+                    "bioggsclassroom" : "Class Room (GGS)",
+                    "bioggsspecialty_p" : "Primary Specialty (GGS)",
+                    "bioggsspecialty_s" : "Secondary Specialty (GGS)",
+                    "biotaylorspecialty_p" : "Secondary Specialty (Taylor)",
+                    "biotaylorspecialty_s" : "Secondary Specialty (Taylor)",
+                    "biotaylorclassroom" : "Class Room (Taylor)",
+                    "biorcsspecialty_p" : "Secondary Specialty (RCS)",
+                    "biorcsspecialty_s" : "Secondary Specialty (RCS)",
                 },
-                onLoad: function(a,b) {
-                    // console.log('results');
-                    // console.log(this);
-                    // console.log(a);                    
-                },
-                debug: true
+
             }         
 
             var suggesterOptions = {
