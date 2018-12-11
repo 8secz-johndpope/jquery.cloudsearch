@@ -63,6 +63,7 @@
         results: {
             container: '#results',
             template: null,
+            noResults: 'Sorry there are no results for your query',
             onCreate: function () { },
             pager: {
                 container: null,
@@ -166,10 +167,10 @@
 
         loadFacets(data);
         loadResults(data);
-        // render pager        
-        renderPager(data);
-
-
+        // render pager  
+        if(data['hits']['found'] > ls.searchParams.size) {
+            renderPager(data);
+        }    
         ls.onLoad.call(data, local);
     }
 
@@ -181,7 +182,8 @@
 
         if (ls.facetsSelected.indexOf(value) != -1)
             return;
-        
+        ls.searchParams.start = 0;
+        local.currentPage = 1;
         ls.facetsSelected.push(value);             
         ls.facetsApplied.onChange.call(ls.facetsSelected.slice(0));    
         ls.facets.onFacetSelect.call(ls.facetsSelected.slice(0));        
@@ -253,11 +255,14 @@
         
         if (!c || !data["hits"]["hit"])
             return;
-
         //Clear the container if skip is 0 or if the clear is forced by setting
         if (!rs.pager.loadMore || ls.searchParams.skip == 0)
             c.html('');
         
+        if(data["hits"]['found'] == 0) {
+            $('<div/>').addClass('cloudsearch-no-results').text(rs.noResults).appendTo(c);
+        }
+
         $(data["hits"]["hit"]).each(function (i, v) {
 
             var fields = v["fields"];
@@ -325,7 +330,7 @@
         var pg = ls.results.pager;
         
         if (pg.renderPager) {            
-            local.totalPages = Math.ceil(local.totalResults / ls.searchParams.size);
+            $(pg.container).empty();
             if(!local.pagerRendered) {
                 local.pagerRange = [ 1, pg.pagerRangeIncrement];
             }
@@ -433,14 +438,14 @@
      */
     function addPagerListeners() {
 
-        $(document).on('click', '.pager-prev, .pager-next, .pager-load', function(e){
+        $('.pager-prev, .pager-next, .pager-load').on('click', function(e){
             e.preventDefault();
             if( !$(this).data('disabled') ) {
                 handlePager($(this).hasClass('pager-prev'));
             }
         });
 
-        $(document).on('click','.pager-nav-items a',function(e){
+        $('.pager-nav-items a').on('click',function(e){
             e.preventDefault();
             skipToPage($(this).data('targetPage'));
         });
@@ -574,6 +579,10 @@
     function search() {
         local.isGeoSearch = false;
 
+        // remove pager
+        $(ls.results.pager.container).empty();
+        local.pagerRendered = false;
+
         if (local.waitingLatLong)
             return;
 
@@ -647,6 +656,7 @@
         $.ajax(settings).done(function (response) {
             if(response.hits) {
                 local.totalResults = response.hits.found > 0 ? response.hits.found : -1;
+                local.totalPages = Math.ceil(local.totalResults / ls.searchParams.size);
                 ls.onResults.call(response, local);
             }
             else if(response.error) {
