@@ -310,8 +310,7 @@
                     if (format && window[format])
                         value = window[format](value, v);
 
-                    if (field) {
-                        console.log($(z).data('cloudsearchValueFormatReplace'))
+                    if (field) {                        
                         if(typeof $(z).data('cloudsearchValueFormatReplace') !== 'undefined') {
                             $(z).replaceWith(value);
                         } else {
