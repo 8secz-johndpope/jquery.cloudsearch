@@ -348,15 +348,6 @@
                     local.pagerRange[1] = (Math.floor(local.currentPage/pg.pagerRangeIncrement) + 1) * pg.pagerRangeIncrement;
                 }
 
-                // if(local.currentPage < local.pagerRange[0]) {
-                //     local.pagerRange[0] = local.pagerRange[0] - pg.pagerRangeIncrement;
-                //     local.pagerRange[1] = local.pagerRange[1] - pg.pagerRangeIncrement;
-                // } else if(local.currentPage > local.pagerRange[1]) {
-                //     local.pagerRange[0] = local.pagerRange[0] + pg.pagerRangeIncrement;
-                //     local.pagerRange[1] = local.pagerRange[1] + pg.pagerRangeIncrement;
-                // }                
-
-                console.log(local.pagerRange);
             }
             generatePagerLinks();            
             // generatePagerText();
@@ -584,9 +575,9 @@
                     }
 
                     //Do not display selected facets
-                    if (ls.facetsSelected.indexOf(v + '|' + k.value) != -1)
-                        f.addClass('selected-facet');
-                        // return true;
+                    if (ls.facetsSelected.indexOf(v + '||' + k.value) != -1) {
+                        f.addClass('active-facet');
+                    }
 
                     if (fs.wrapper)
                         $(fs.wrapper).addClass(fs.wrapperClass).append(f).appendTo(w);
@@ -801,7 +792,6 @@
             if(ls.searchParams['q.parser'] == 'structured') {
                 ls.searchParams.q = '(or ';
                 $(search.split(' ')).each(function(k,v){
-                    // console.log(v);
                     ls.searchParams.q += '(term \''+v+'\')';
                     ls.searchParams.q += '(prefix \''+v+'\')';
                 });
