@@ -44,10 +44,17 @@
                 results: {
                     container: '#tps-aws-results',                    
                     pager: {
-                        renderPager: true,
+                        appendPager: true,
                         container: '#tps-aws-results-pager',
                         loadMore: false,
                         pagerRangeIncrement: 5,
+                        enders: true,
+                        labels: {
+                            prev : '< Previous',
+                            next : 'Next >',
+                            first: '<< First',
+                            last: 'Last >>'
+                        }
                     },
                     template: '<div class="cell"><div data-cloudsearch-field="documentname"  ></div></div>',
                 },
@@ -79,7 +86,7 @@
                     start: 0, // offset starting result (pagination)
                     "q.parser" : "structured",
                     "q.options" : "{ fields: [ 'menuitemname^5','description^2', 'menuitemsummary^2' ] }",                    
-                    fq: "classname: 'TPSDT.Bio'"
+                    // fq: "classname: 'TPSDT.Bio'"
 
                 },
                 facetsDictionary: { 
