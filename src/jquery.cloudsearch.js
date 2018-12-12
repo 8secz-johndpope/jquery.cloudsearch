@@ -310,9 +310,13 @@
                     if (format && window[format])
                         value = window[format](value, v);
 
-                    if (field)
-                        $(z).html(value);
-
+                    if (field) {                        
+                        if(typeof $(z).data('cloudsearchValueFormatReplace') !== 'undefined') {
+                            $(z).replaceWith(value);
+                        } else {
+                            $(z).html(value);
+                        }
+                    }
                 });
                 c.append(t);
 
