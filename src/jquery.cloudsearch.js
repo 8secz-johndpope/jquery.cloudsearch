@@ -67,23 +67,25 @@
             onCreate: function () { },
             pager: {
                 container: null,
-                renderPager: false,
                 loadMore: true,
-                appendPager: true,
+                appendPager: false,
                 pagerRangeIncrement: 5,
+                enders: true,
                 labels: {
-                    prev: 'previous',
-                    next: 'next',
-                    first: 'first',
-                    last: 'last',
+                    prev: 'Previous',
+                    next: 'Next',
+                    first: 'First',
+                    last: 'Last',
                     results: 'results for',
                     load: 'load more',
                     ada: {
-                        prev: 'previous page of results',
-                        next: 'next page of results',
-                        first: 'first page of results',
-                        last: 'last page of results',
-                        load: 'load more results'
+                        current: 'You are on page',
+                        item: 'Go to page',
+                        prev: 'Go to the previous page of results',
+                        next: 'Go to the next page of results',
+                        first: 'Go to the first page of results',
+                        last: 'Go to the last page of results',
+                        load: 'Load more results'
                     }
                 },
                 onRender: function () { },
@@ -329,10 +331,28 @@
         
         var pg = ls.results.pager;
         
-        if (pg.renderPager) {            
+        if (pg.appendPager) {            
             $(pg.container).empty();
             if(!local.pagerRendered) {
-                local.pagerRange = [ 1, pg.pagerRangeIncrement];
+                              
+
+                local.pagerRange[0] = 1;
+                local.pagerRange[1] = pg.pagerRangeIncrement 
+
+                if(local.currentPage >= pg.pagerRangeIncrement) {
+                    local.pagerRange[0] = Math.floor(local.currentPage/pg.pagerRangeIncrement) * pg.pagerRangeIncrement;
+                    local.pagerRange[1] = (Math.floor(local.currentPage/pg.pagerRangeIncrement) + 1) * pg.pagerRangeIncrement;
+                }
+
+                // if(local.currentPage < local.pagerRange[0]) {
+                //     local.pagerRange[0] = local.pagerRange[0] - pg.pagerRangeIncrement;
+                //     local.pagerRange[1] = local.pagerRange[1] - pg.pagerRangeIncrement;
+                // } else if(local.currentPage > local.pagerRange[1]) {
+                //     local.pagerRange[0] = local.pagerRange[0] + pg.pagerRangeIncrement;
+                //     local.pagerRange[1] = local.pagerRange[1] + pg.pagerRangeIncrement;
+                // }                
+
+                console.log(local.pagerRange);
             }
             generatePagerLinks();            
             // generatePagerText();
@@ -355,17 +375,12 @@
             
             c.append(addPagerButton('load'));
             
-        } else {            
-
-            if(local.currentPage < local.pagerRange[0]) {
-                local.pagerRange[0] = local.pagerRange[0] - pg.pagerRangeIncrement;
-                local.pagerRange[1] = local.pagerRange[1] - pg.pagerRangeIncrement;
-            } else if(local.currentPage > local.pagerRange[1]) {
-                local.pagerRange[0] = local.pagerRange[0] + pg.pagerRangeIncrement;
-                local.pagerRange[1] = local.pagerRange[1] + pg.pagerRangeIncrement;
-            }
+        } else {         
 
             var items;
+            if(pg.enders) {
+                c.append(addPagerButton('first'));
+            }
             c.append(addPagerButton('prev'));
 
             if(!local.pagerRendered) {
@@ -379,6 +394,9 @@
                 var pagerLink = $('<a href="#">').data('targetPage',i);
                 if(i === local.currentPage) {
                     pagerLink = $('<span></span>');
+                    pagerLink.attr('title', pg.labels.ada.current + ' ' + i);
+                } else {
+                    pagerLink.attr('title', pg.labels.ada.item + ' ' + i);
                 }
                 pagerLink.text(i);
                 items.append(pagerLink);
@@ -387,10 +405,16 @@
 
             if( !c ) {                
                 c.append(addPagerButton('next'));
+                if(pg.enders) {
+                    c.append(addPagerButton('last'));
+                }
                 $(local.container).after(c)
             } else {
                 c.append(items);            
                 c.append(addPagerButton('next'));
+                if(pg.enders) {
+                    c.append(addPagerButton('last'));
+                }
             } 
 
         }
@@ -409,13 +433,20 @@
     function addPagerButton(type) {
 
         var pg = ls.results.pager;
-        var button = $('<a/>').text(pg.labels[type]).addClass('pager-navs').addClass('pager-' + type).attr('href','#');
+        var button = $('<a/>').text(pg.labels[type]).addClass('pager-navs').addClass('pager-' + type).attr('href','#').attr('title', pg.labels.ada[type]);
 
+        if(type == 'first') {
+            button.data('targetPage', 1);
+        } else if (type == 'last') {
+            button.data('targetPage', local.totalPages);
+        }
+
+        //button;
         if(local.pagerRendered) {
             button = $('.pager-navs.pager-' + type);
         }
         
-        if (type == 'prev') {
+        if (type == 'prev' || type == 'first') {
             if (local.currentPage > 1) {
                 button.data('disabled', false).removeClass('disabled');
             } else {
@@ -442,6 +473,13 @@
             e.preventDefault();
             if( !$(this).data('disabled') ) {
                 handlePager($(this).hasClass('pager-prev'));
+            }
+        });
+
+        $('.pager-last, .pager-first').on('click', function(e){
+            e.preventDefault();
+            if( !$(this).data('disabled') ) {                
+                skipToPage($(this).data('targetPage'));
             }
         });
 
@@ -478,7 +516,7 @@
      */
     function skipToPage(num) {
         local.currentPage = num;
-        ls.searchParams.skip = (local.currentPage - 1) * ls.searchParams.size;       
+        ls.searchParams.start = (local.currentPage - 1) * ls.searchParams.size;       
         search();            
     }
 
