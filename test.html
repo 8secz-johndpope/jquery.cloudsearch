@@ -56,7 +56,7 @@
                             last: 'Last >>'
                         }
                     },
-                    template: '<div class="cell"><div data-cloudsearch-field="documentname"  ></div></div>',
+                    template: '<div class="cell"><div data-cloudsearch-field="documentname" data-cloudsearch-value-format="tps_format_test" data-cloudsearch-value-format-replace   ></div></div>',
                 },
                 facets: {
                     container: "#tps-aws-facet-list",  
@@ -143,7 +143,7 @@
             tps_format_test = function(value, resultsObject) {
                 // console.log(value);
                 // console.log(resultsObject);
-                return value;
+                return '<h2>' + value + '</h2>';
             } 
         </script>
     </body>

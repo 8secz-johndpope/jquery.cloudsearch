@@ -310,9 +310,14 @@
                     if (format && window[format])
                         value = window[format](value, v);
 
-                    if (field)
-                        $(z).html(value);
-
+                    if (field) {
+                        console.log($(z).data('cloudsearchValueFormatReplace'))
+                        if(typeof $(z).data('cloudsearchValueFormatReplace') !== 'undefined') {
+                            $(z).replaceWith(value);
+                        } else {
+                            $(z).html(value);
+                        }
+                    }
                 });
                 c.append(t);
 
