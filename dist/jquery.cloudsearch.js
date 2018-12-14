@@ -27,6 +27,19 @@
             start: 0, // offset starting result (pagination)
             "q.parser" : "structured",
         },
+        dates: {
+            hasDates: false,
+            fields: {
+                cloudSearchField: null,
+                // event: 'change', // change, blur
+                from: {
+                    fieldId: null
+                },
+                to: {
+                    fieldId: null
+                }
+            }
+        },
         facets: {
             displayFacets: [ ],
             facet: '<a href=\"#\"/>',
@@ -116,7 +129,9 @@
         isGeoSearch: false,
         totalResults: 0,
         initialized: false,
-        rendered: false
+        rendered: false,
+        fromDate: null,
+        toDate: null,
     }
 
     /**
@@ -140,6 +155,10 @@
             $(ls.facetsSelected).each(function (i, v) {
                 ls.facets.onFacetSelect.call([v]);
             });
+        }
+
+        if(ls.dates.hasDates) {
+            setupDateFields();
         }
 
         switch (action) {
@@ -605,6 +624,36 @@
     }
 
     /**
+     * Setup Date fields to filter results
+     * based on a date range
+     */
+    function setupDateFields() {
+        
+        f = ls.dates.fields;
+
+        if(!f.from.selector || !f.cloudSearchField)
+            return;
+        
+        fields = f.from.selector;
+
+        if(f.to.selector) {
+            fields += ', ' + f.to.selector;
+        }
+
+        $(fields).on('change', function(e) {
+            handleDateInput( $(this).val(), $(this).data('dateDir'));
+        });
+
+        function handleDateInput(val,dir) {
+            var dateObj = new Date(val);
+            local[dir] = dateObj;
+            local.dateSearch = true;
+            search();
+        }
+        
+    }
+
+    /**
      * External API Calls
      */
 
@@ -660,14 +709,33 @@
         }
 
         //Apply geo distance filter if configured
-        if (local.isGeoSearch && ls.geoSearch.maxDistance) {
-            debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
-            var geoFilter = "geo.distance(" + ls.geoSearch.cloudFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
-            if (f) {
-                f += ' and ' + geoFilter
+        // if (local.isGeoSearch && ls.geoSearch.maxDistance) {
+        //     debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
+        //     var geoFilter = "geo.distance(" + ls.geoSearch.cloudFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
+        //     if (f) {
+        //         f += ' and ' + geoFilter
+        //     } else {
+        //         f = geoFilter;
+        //     }
+        // }
+
+        if(local.dateSearch) {
+
+            date_f = "(and " + ls.dates.fields.cloudSearchField + ": ['" + local.fromDate.toISOString() + "'";           
+            
+            if(local.toDate) {
+                date_f += ",'" + local.toDate.toISOString() + "']";
             } else {
-                f = geoFilter;
+                date_f += ",}"; 
             }
+
+            
+            if (f) {
+                f += date_f;
+            } else if(previousFilter) {
+                f = '(' + ls.facets.searchMode + ' ' + ls.searchParams.fq + ' ' + date_f + ')';
+            }
+            // console.log(date_f);
         }
 
         if (f)
