@@ -629,18 +629,20 @@
      */
     function setupDateFields() {
         
-        var f = ls.dates.fields;
-        
-        if(!f.from.selector || !f.cloudSearchField)
+        var df = ls.dates.fields;
+
+        if(!df.from.selector || !df.cloudSearchField)
             return;
         
-        fields = f.from.selector;
+        var fs = df.from.selector;
 
-        if(f.to.selector) {
-            fields += ', ' + f.to.selector;
+        if(df.to.selector && df.from.selector) {
+            fs += ', ' + df.to.selector;
+        } else if(df.to.selector) {
+            fs = df.to.selector;
         }
 
-        $(fields).on('change', function(e) {
+        $(fs).on('change', function(e) {
             handleDateInput( $(this).val(), $(this).data('dateDir'));
         });
 
