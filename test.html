@@ -105,12 +105,13 @@
                     start: 0, // offset starting result (pagination)
                     "q.parser" : "structured",
                     "q.options" : "{ fields: [ 'documentname^5', 'menuitemname^5', 'menuitemsummary^2' ] }",                    
-                    fq: "classname: 'TPSDT.NewsArticle'"
+                    // fq: "classname: 'TPSDT.NewsArticle'"
 
                 },
                 facetsDictionary: { 
                     "newsarticlecategories" : "",
-                    "newsarticletags" : ""
+                    "newsarticletags" : "",
+                    "classname" : ""
                 },
 
             }         

@@ -645,9 +645,18 @@
         });
 
         function handleDateInput(val,dir) {
-            var dateObj = new Date(val);
-            local[dir] = dateObj;
-            local.dateSearch = true;
+            local[dir] = null;
+            if(val) {
+                var dateObj = new Date(val);
+                local[dir] = dateObj;
+            } 
+            if(local.fromDate || local.toDate) {
+                local.dateSearch = true;
+            } else {
+                local.dateSearch = false;
+            }
+            ls.searchParams.start = 0;
+            local.currentPage = 1;
             search();
         }
         
@@ -702,10 +711,7 @@
                 facetFilter.push('' + p[0] + ': \'' + p[1].replace(/[']/gi, '\'\'') + '\'');
             });
 
-            f = '(' + ls.facets.searchMode + ' ' + facetFilter.join(' ') + ')';
-            
-            if (previousFilter)
-                f = '(' + ls.facets.searchMode + ' ' + ls.searchParams.fq + ' ' + f + ')';
+            f = facetFilter.join(' ');
         }
 
         //Apply geo distance filter if configured
@@ -719,27 +725,37 @@
         //     }
         // }
 
+        var date_f = "";
         if(local.dateSearch) {
+            if(local.fromDate) {
+                date_f = ls.dates.fields.cloudSearchField + ": ['" + local.fromDate.toISOString() + "'";           
+            } 
 
-            date_f = "(and " + ls.dates.fields.cloudSearchField + ": ['" + local.fromDate.toISOString() + "'";           
-            
             if(local.toDate) {
+                if(!local.fromDate) {
+                    date_f += ls.dates.fields.cloudSearchField + ":{"; 
+                }
                 date_f += ",'" + local.toDate.toISOString() + "']";
-            } else {
+            } else if(local.fromDate) {
                 date_f += ",}"; 
             }
-
             
             if (f) {
-                f += date_f;
-            } else if(previousFilter) {
-                f = '(' + ls.facets.searchMode + ' ' + ls.searchParams.fq + ' ' + date_f + ')';
+                f += " " + date_f;
+            } else {
+                f = date_f;
             }
-            // console.log(date_f);
         }
 
-        if (f)
+        if (f) {
+            if(previousFilter) {
+                f = '(' + ls.facets.searchMode + ' ' + previousFilter + ' ' + f + ')';
+            } else {
+                f = '(' + ls.facets.searchMode + ' ' + f + ')'
+            }
             ls.searchParams.fq = f;
+        }
+
 
         var settings = {
             "crossDomain": true,
