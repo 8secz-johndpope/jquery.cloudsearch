@@ -629,8 +629,8 @@
      */
     function setupDateFields() {
         
-        f = ls.dates.fields;
-
+        var f = ls.dates.fields;
+        
         if(!f.from.selector || !f.cloudSearchField)
             return;
         
