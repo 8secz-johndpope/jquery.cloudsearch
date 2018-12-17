@@ -27,6 +27,19 @@
             start: 0, // offset starting result (pagination)
             "q.parser" : "structured",
         },
+        dates: {
+            hasDates: false,
+            fields: {
+                cloudSearchField: null,
+                // event: 'change', // change, blur
+                from: {
+                    fieldId: null
+                },
+                to: {
+                    fieldId: null
+                }
+            }
+        },
         facets: {
             displayFacets: [ ],
             facet: '<a href=\"#\"/>',
@@ -116,7 +129,9 @@
         isGeoSearch: false,
         totalResults: 0,
         initialized: false,
-        rendered: false
+        rendered: false,
+        fromDate: null,
+        toDate: null,
     }
 
     /**
@@ -140,6 +155,10 @@
             $(ls.facetsSelected).each(function (i, v) {
                 ls.facets.onFacetSelect.call([v]);
             });
+        }
+
+        if(ls.dates.hasDates) {
+            setupDateFields();
         }
 
         switch (action) {
@@ -348,15 +367,6 @@
                     local.pagerRange[1] = (Math.floor(local.currentPage/pg.pagerRangeIncrement) + 1) * pg.pagerRangeIncrement;
                 }
 
-                // if(local.currentPage < local.pagerRange[0]) {
-                //     local.pagerRange[0] = local.pagerRange[0] - pg.pagerRangeIncrement;
-                //     local.pagerRange[1] = local.pagerRange[1] - pg.pagerRangeIncrement;
-                // } else if(local.currentPage > local.pagerRange[1]) {
-                //     local.pagerRange[0] = local.pagerRange[0] + pg.pagerRangeIncrement;
-                //     local.pagerRange[1] = local.pagerRange[1] + pg.pagerRangeIncrement;
-                // }                
-
-                console.log(local.pagerRange);
             }
             generatePagerLinks();            
             // generatePagerText();
@@ -584,9 +594,9 @@
                     }
 
                     //Do not display selected facets
-                    if (ls.facetsSelected.indexOf(v + '|' + k.value) != -1)
-                        f.addClass('selected-facet');
-                        // return true;
+                    if (ls.facetsSelected.indexOf(v + '||' + k.value) != -1) {
+                        f.addClass('active-facet');
+                    }
 
                     if (fs.wrapper)
                         $(fs.wrapper).addClass(fs.wrapperClass).append(f).appendTo(w);
@@ -611,6 +621,45 @@
 
             }
         });
+    }
+
+    /**
+     * Setup Date fields to filter results
+     * based on a date range
+     */
+    function setupDateFields() {
+        
+        f = ls.dates.fields;
+
+        if(!f.from.selector || !f.cloudSearchField)
+            return;
+        
+        fields = f.from.selector;
+
+        if(f.to.selector) {
+            fields += ', ' + f.to.selector;
+        }
+
+        $(fields).on('change', function(e) {
+            handleDateInput( $(this).val(), $(this).data('dateDir'));
+        });
+
+        function handleDateInput(val,dir) {
+            local[dir] = null;
+            if(val) {
+                var dateObj = new Date(val);
+                local[dir] = dateObj;
+            } 
+            if(local.fromDate || local.toDate) {
+                local.dateSearch = true;
+            } else {
+                local.dateSearch = false;
+            }
+            ls.searchParams.start = 0;
+            local.currentPage = 1;
+            search();
+        }
+        
     }
 
     /**
@@ -662,25 +711,51 @@
                 facetFilter.push('' + p[0] + ': \'' + p[1].replace(/[']/gi, '\'\'') + '\'');
             });
 
-            f = '(' + ls.facets.searchMode + ' ' + facetFilter.join(' ') + ')';
-            
-            if (previousFilter)
-                f = '(' + ls.facets.searchMode + ' ' + ls.searchParams.fq + ' ' + f + ')';
+            f = facetFilter.join(' ');
         }
 
         //Apply geo distance filter if configured
-        if (local.isGeoSearch && ls.geoSearch.maxDistance) {
-            debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
-            var geoFilter = "geo.distance(" + ls.geoSearch.cloudFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
+        // if (local.isGeoSearch && ls.geoSearch.maxDistance) {
+        //     debug('Filter Geo searching by distance : ' + ls.geoSearch.maxDistance);
+        //     var geoFilter = "geo.distance(" + ls.geoSearch.cloudFieldName + ", geography'POINT(" + ls.geoSearch.lng + " " + ls.geoSearch.lat + ")') le " + ls.geoSearch.maxDistance;
+        //     if (f) {
+        //         f += ' and ' + geoFilter
+        //     } else {
+        //         f = geoFilter;
+        //     }
+        // }
+
+        var date_f = "";
+        if(local.dateSearch) {
+            if(local.fromDate) {
+                date_f = ls.dates.fields.cloudSearchField + ": ['" + local.fromDate.toISOString() + "'";           
+            } 
+
+            if(local.toDate) {
+                if(!local.fromDate) {
+                    date_f += ls.dates.fields.cloudSearchField + ":{"; 
+                }
+                date_f += ",'" + local.toDate.toISOString() + "']";
+            } else if(local.fromDate) {
+                date_f += ",}"; 
+            }
+            
             if (f) {
-                f += ' and ' + geoFilter
+                f += " " + date_f;
             } else {
-                f = geoFilter;
+                f = date_f;
             }
         }
 
-        if (f)
+        if (f) {
+            if(previousFilter) {
+                f = '(' + ls.facets.searchMode + ' ' + previousFilter + ' ' + f + ')';
+            } else {
+                f = '(' + ls.facets.searchMode + ' ' + f + ')'
+            }
             ls.searchParams.fq = f;
+        }
+
 
         var settings = {
             "crossDomain": true,
@@ -801,7 +876,6 @@
             if(ls.searchParams['q.parser'] == 'structured') {
                 ls.searchParams.q = '(or ';
                 $(search.split(' ')).each(function(k,v){
-                    // console.log(v);
                     ls.searchParams.q += '(term \''+v+'\')';
                     ls.searchParams.q += '(prefix \''+v+'\')';
                 });

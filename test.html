@@ -15,6 +15,8 @@
 
         <div class="input-wrapper">
             <input type="text" id="searchInput" value="" placeholder="Start typing" />
+            <input type="date" id="fromDate" data-date-dir="fromDate" placeholder="from">
+            <input type="date" id="toDate" data-date-dir="toDate" placeholder="to">
         </div>
 
         <table>
@@ -56,7 +58,11 @@
                             last: 'Last >>'
                         }
                     },
-                    template: '<div class="cell"><div data-cloudsearch-field="documentname" data-cloudsearch-value-format="tps_format_test" data-cloudsearch-value-format-replace   ></div></div>',
+                    template: `
+                        <div>
+                            <div data-cloudsearch-field="documentname" data-cloudsearch-value-format="tps_format_test" data-cloudsearch-value-format-replace></div>
+                            <div data-cloudsearch-field="newsarticledate"></div>
+                        </div>`,
                 },
                 facets: {
                     container: "#tps-aws-facet-list",  
@@ -75,35 +81,37 @@
                     groupWrapper: '<li data-accordion-item />',
                     groupWrapperClass: 'accordion-item tps-accordion-item is-active'
                 },
+                dates: {
+                    hasDates: true,
+                    fields: {
+                        cloudSearchField: 'newsarticledate',                        
+                        from: {
+                            selector: '#fromDate'
+                        },
+                        to: {
+                            selector: '#toDate'
+                        }
+                    }
+                },
                 facetsApplied: {
                     container: '#tps-aws-active-facets',
                 },
                 searchParams: {
                     q: "matchall",
-                    return: "_all_fields",
+                    return: "menuitemname,menuitemimage,menuitemsummary,menuitemcalltoactiontext,nodealiaspath,documentname,newsarticledate,newsarticlecategories,_score",
+                    //return: '_all_fields',
                     size: 5, // page size
-                    sort: "_score desc",
+                    sort: "newsarticledate asc,_score desc",
                     start: 0, // offset starting result (pagination)
                     "q.parser" : "structured",
-                    "q.options" : "{ fields: [ 'menuitemname^5','description^2', 'menuitemsummary^2' ] }",                    
-                    // fq: "classname: 'TPSDT.Bio'"
+                    "q.options" : "{ fields: [ 'documentname^5', 'menuitemname^5', 'menuitemsummary^2' ] }",                    
+                    // fq: "classname: 'TPSDT.NewsArticle'"
 
                 },
                 facetsDictionary: { 
-                    "classname"  : "Page Types",
-                    "biotype"  : "Bio Types",
-                    "bioartistgenres" : "Artist Genre(s)",
-                    "bioexamexaminertype" : "Examiner Type (Ex)",
-                    "biocorpstaffexaminertype" : "Examiner Type (CS)",
-                    "bioseniorstaffexaminertype" : "Examiner Type (SS)",
-                    "bioggsclassroom" : "Class Room (GGS)",
-                    "bioggsspecialty_p" : "Primary Specialty (GGS)",
-                    "bioggsspecialty_s" : "Secondary Specialty (GGS)",
-                    "biotaylorspecialty_p" : "Secondary Specialty (Taylor)",
-                    "biotaylorspecialty_s" : "Secondary Specialty (Taylor)",
-                    "biotaylorclassroom" : "Class Room (Taylor)",
-                    "biorcsspecialty_p" : "Secondary Specialty (RCS)",
-                    "biorcsspecialty_s" : "Secondary Specialty (RCS)",
+                    "newsarticlecategories" : "",
+                    "newsarticletags" : "",
+                    "classname" : ""
                 },
 
             }         
