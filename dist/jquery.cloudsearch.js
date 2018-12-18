@@ -647,13 +647,29 @@
             handleDateInput( $(this).val(), $(this).data('dateDir'));
         });
 
+        
+        $(fs).on('keydown', function (e) {
+            // search on return press
+            if(e.which === 13){
+                e.preventDefault();
+                handleDateInput( $(this).val(), $(this).data('dateDir'));
+            } 
+            // clear field and search on backspace/delete
+            else if(e.which == 8 || e.which == 46) {
+                e.preventDefault();
+                $(this).val('');
+                handleDateInput( $(this).val(), $(this).data('dateDir'));
+            }
+        });
+
         function handleDateInput(val,dir) {
             local[dir] = null;
-            if(val) {
+            if(val && dir) {
                 val = df.zone ? val + " " + df.zone : val;
                 var dateObj = new Date(val);
                 local[dir] = dateObj;
             } 
+
             if(local.fromDate || local.toDate) {
                 local.dateSearch = true;
             } else {
