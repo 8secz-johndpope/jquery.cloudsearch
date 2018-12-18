@@ -32,6 +32,7 @@
             fields: {
                 cloudSearchField: null,
                 // event: 'change', // change, blur
+                zone: 'EST',
                 from: {
                     fieldId: null
                 },
@@ -649,6 +650,7 @@
         function handleDateInput(val,dir) {
             local[dir] = null;
             if(val) {
+                val = df.zone ? val + " " + df.zone : val;
                 var dateObj = new Date(val);
                 local[dir] = dateObj;
             } 
