@@ -41,8 +41,7 @@
                 }
             }
         },
-        facets: {
-            displayFacets: [ ],
+        facets: {       
             facet: '<a href=\"#\"/>',
             facetClass: 'facet',
             titleWrapper: "<h2/>",
@@ -62,13 +61,18 @@
             searchMode: 'and',
             onFacetSelect: defaultFacetSelect,
             groupWrapper: '<div/>',
-            groupWrapperClass: 'group'
+            groupWrapperClass: 'group',
         },
         facetsApplied: {
             container: null,
             class: 'selected-facet',
             extraAttributes: {},
             ignoreFacets: [],
+            clearAll: {
+                enabled: true,
+                label: 'Clear all',
+                className: '',                
+            },  
             onChange: function () { }
         },
         facetsDictionary: null,
@@ -133,6 +137,7 @@
         rendered: false,
         fromDate: null,
         toDate: null,
+        clearAllAdded: false,
     }
 
     /**
@@ -224,9 +229,9 @@
 
         var lastFacet = this.pop();
         var c = $(sfs.container);
-
+        // console.log()
         var fs = lastFacet.split('||');
-
+        
         //Ignore if necessary
         if (sfs.ignoreFacets.indexOf(fs[0]) != -1)
             return;
@@ -244,9 +249,39 @@
                     );
                 ls.facetsApplied.onChange.call(ls.facetsSelected.slice(0));
                 $(this).remove();
+                if(!(c.children().not('.clear-all-facets').length > 0)) {            
+                    c.hide();
+                }                 
                 search();
             })
             .appendTo(c);
+        // clearAll
+        if(sfs.clearAll.enabled && !local.clearAllAdded) {
+            $('<a/>').text(sfs.clearAll.label)
+            .attr({ 'href': '#' })
+            .attr(sfs.extraAttributes)
+            .addClass('clear-all-facets')
+            .addClass(sfs.class)
+            .addClass(sfs.clearAll.className)
+            .on('click', function (e) {
+                e.preventDefault();
+                local.clearAllAdded = false;
+                c.empty();
+                ls.facetsSelected = [];
+
+                if(!(c.children().not('.clear-all-facets').length > 0)) {            
+                    c.hide();
+                } 
+
+                search();
+                //search();
+            })
+            .prependTo(c);
+            local.clearAllAdded = true;
+        }
+
+        c.show();
+
     }
 
     function processAddress(data) {
