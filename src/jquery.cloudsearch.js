@@ -57,7 +57,7 @@
             showCount: true,
             countWrapper: null,
             countWrapperClass: null,
-            facetOnClick: defaultFacetClick,
+            facetOnClick: defaultFacetChange,
             searchMode: 'and',
             onFacetSelect: defaultFacetSelect,
             groupWrapper: '<div/>',
@@ -203,10 +203,14 @@
     }
 
     //Default action when a facet receives a click
-    function defaultFacetClick(e) {
+    function defaultFacetChange(e) {
         e.preventDefault();
 
         var value = $(this).data('cloudsearchFacetName') + '||' + $(this).data('cloudsearchFacetValue');
+        
+        if(e.target.nodeName == 'SELECT') {
+            value = $(this).data('cloudsearchFacetName') + '||' + $(this).val();
+        }
 
         if (ls.facetsSelected.indexOf(value) != -1)
             return;
@@ -605,11 +609,15 @@
 
                 title.on('click', fs.titleOnClick);
 
+                //Facets container
+                var w = $(fs.wrapperContainer).addClass(fs.wrapperContainerClass);        
+                c.append(w);
+                
                 if(typeof ls.facetsDictionary[v] == 'object' && ls.facetsDictionary[v].dropdown) {
-                    renderFacetSelect(title, data, v);
+                    renderFacetSelect(w, title, data, v);
                 }
                 else {
-                    renderFacetList(title, data, v);
+                    renderFacetList(w, title, data, v);
                 }
 
             }
@@ -618,19 +626,38 @@
         });
     }
 
-    function renderFacetSelect(title, data, v) {
+    // render facet as dropdown select instead
+    // of links
+    function renderFacetSelect(w, title, data, v) {
         var fs = ls.facets;
         var c = $(fs.container);
 
-
-        //Facets container
-        var w = $(fs.wrapperContainer).addClass(fs.wrapperContainerClass);
-        c.append(w);
-
+        var control = $('<select />')
+        .data('cloudsearchFacetName', v)
+        .on('change', fs.facetOnClick).append($('<option />').text('Select'));
+        w.append(control);
         var countFacets = 0;
 
         //Facets
         $(data["facets"][v]['buckets']).each(function (j, k) {
+
+            //Create the facet
+            var f = $('<option />')
+                // .addClass(fs.facetClass)
+                .text(k.value)
+                .attr('value', k.value);
+
+            //Counter
+            if (fs.showCount) {
+                f.text(f.text() + " (" + k.count + ")");
+            }
+            
+            //Do not display selected facets
+            if (ls.facetsSelected.indexOf(v + '||' + k.value) != -1) {
+                f.attr("selected","selected");
+            }            
+            control.append(f);
+
             countFacets++;
         });
 
@@ -648,14 +675,10 @@
         }
     }
 
-    function renderFacetList(title, data, v) {
+    // render facet list as links
+    function renderFacetList(w, title, data, v) {
         var fs = ls.facets;
         var c = $(fs.container);
-
-
-        //Facets container
-        var w = $(fs.wrapperContainer).addClass(fs.wrapperContainerClass);
-        c.append(w);
 
         var countFacets = 0;
 
