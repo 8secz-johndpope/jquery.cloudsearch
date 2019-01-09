@@ -66,6 +66,7 @@
         facetsApplied: {
             container: null,
             class: 'selected-facet',
+            // fieldParams: ,
             extraAttributes: {},
             ignoreFacets: [],
             clearAll: {
@@ -582,81 +583,129 @@
         c.html('');
 
         $(Object.keys(ls.facetsDictionary)).each(function (i, v) {
-
-        //     //Ignore the faceting options if any
-        //     if (v.indexOf(',') != -1)
-        //         v = v.split(',')[0];
-
+       
+       
             if (data["facets"][v]) {
 
                 //Facet's Title
-                var tt = ls.facetsDictionary && ls.facetsDictionary[v] ?
-                    ls.facetsDictionary[v] : v;
+                var tt = v;
+                if(typeof ls.facetsDictionary[v] == 'object' && ls.facetsDictionary[v].label) {
+                    tt = ls.facetsDictionary[v].label;
+                } else if(ls.facetsDictionary && ls.facetsDictionary[v]) {
+                    tt = ls.facetsDictionary[v];
+                }
 
                 var title = $(fs.title).addClass(fs.titleClass).text(tt);
 
                 if (fs.titleWrapper) {
                     title = $(fs.titleWrapper).addClass(fs.titleWrapperClass).append(title);
                 }
-
+                
                 c.append(title);
+
                 title.on('click', fs.titleOnClick);
 
-                //Facets container
-                var w = $(fs.wrapperContainer).addClass(fs.wrapperContainerClass);
-                c.append(w);
-
-                var countFacets = 0;
-
-                //Facets
-                $(data["facets"][v]['buckets']).each(function (j, k) {
-
-                    //Create the facet
-                    var f = $(fs.facet)
-                        .addClass(fs.facetClass)
-                        .html(k.value)
-                        .on('click', fs.facetOnClick)
-                        .data('cloudsearchFacetName', v)
-                        .data('cloudsearchFacetValue', k.value);
-
-                    //Counter
-                    if (fs.showCount && ls.facets.countWrapper) {
-                        $(ls.facets.countWrapper)
-                            .text("(" + k.count + ")")
-                            .addClass(ls.facets.countWrapperClass)
-                            .appendTo(f);
-                    } else if (fs.showCount) {
-                        f.append(" (" + k.count + ")");
-                    }
-
-                    //Do not display selected facets
-                    if (ls.facetsSelected.indexOf(v + '||' + k.value) != -1) {
-                        f.addClass('active-facet');
-                    }
-
-                    if (fs.wrapper)
-                        $(fs.wrapper).addClass(fs.wrapperClass).append(f).appendTo(w);
-                    else
-                        w.append(f);
-
-                    countFacets++;
-                });
-
-                //Group Wrapper
-                if (fs.groupWrapper && countFacets > 0) {
-                    var gw = $(fs.groupWrapper).addClass(fs.groupWrapperClass);
-                    c.append(gw);
-                    title.appendTo(gw);
-                    w.appendTo(gw);
+                if(typeof ls.facetsDictionary[v] == 'object' && ls.facetsDictionary[v].dropdown) {
+                    renderFacetSelect(title, data, v);
                 }
-
-                if (countFacets == 0) {
-                    title.remove();
-                    w.remove();
+                else {
+                    renderFacetList(title, data, v);
                 }
 
             }
+
+
         });
+    }
+
+    function renderFacetSelect(title, data, v) {
+        var fs = ls.facets;
+        var c = $(fs.container);
+
+
+        //Facets container
+        var w = $(fs.wrapperContainer).addClass(fs.wrapperContainerClass);
+        c.append(w);
+
+        var countFacets = 0;
+
+        //Facets
+        $(data["facets"][v]['buckets']).each(function (j, k) {
+            countFacets++;
+        });
+
+         //Group Wrapper
+         if (fs.groupWrapper && countFacets > 0) {
+            var gw = $(fs.groupWrapper).addClass(fs.groupWrapperClass);
+            c.append(gw);
+            title.appendTo(gw);
+            w.appendTo(gw);
+        }
+
+        if (countFacets == 0) {
+            title.remove();
+            w.remove();
+        }
+    }
+
+    function renderFacetList(title, data, v) {
+        var fs = ls.facets;
+        var c = $(fs.container);
+
+
+        //Facets container
+        var w = $(fs.wrapperContainer).addClass(fs.wrapperContainerClass);
+        c.append(w);
+
+        var countFacets = 0;
+
+        //Facets
+        $(data["facets"][v]['buckets']).each(function (j, k) {
+
+            //Create the facet
+            var f = $(fs.facet)
+                .addClass(fs.facetClass)
+                .html(k.value)
+                .on('click', fs.facetOnClick)
+                .data('cloudsearchFacetName', v)
+                .data('cloudsearchFacetValue', k.value);
+
+            //Counter
+            if (fs.showCount && ls.facets.countWrapper) {
+                $(ls.facets.countWrapper)
+                    .text("(" + k.count + ")")
+                    .addClass(ls.facets.countWrapperClass)
+                    .appendTo(f);
+            } else if (fs.showCount) {
+                f.append(" (" + k.count + ")");
+            }
+
+            //Do not display selected facets
+            if (ls.facetsSelected.indexOf(v + '||' + k.value) != -1) {
+                f.addClass('active-facet');
+            }
+
+            if (fs.wrapper)
+                $(fs.wrapper).addClass(fs.wrapperClass).append(f).appendTo(w);
+            else
+                w.append(f);
+
+            countFacets++;
+        });
+        
+        //Group Wrapper
+        if (fs.groupWrapper && countFacets > 0) {
+            var gw = $(fs.groupWrapper).addClass(fs.groupWrapperClass);
+            c.append(gw);
+            title.appendTo(gw);
+            w.appendTo(gw);
+        }
+
+        if (countFacets == 0) {
+            title.remove();
+            w.remove();
+        }
+
     }
 
     /**
@@ -753,7 +802,10 @@
         
         if( ls.facetsDictionary ) {
             $(Object.keys(ls.facetsDictionary)).each(function(k,v){
-                ls.searchParams['facet.'+v] = '{}';                
+                var fieldParams = '{}';
+                if(typeof ls.facetsDictionary[v] == 'object' && ls.facetsDictionary[v].params) 
+                    fieldParams = ls.facetsDictionary[v].params;
+                ls.searchParams['facet.'+v] = fieldParams;                
             });
         }
 
