@@ -60,7 +60,7 @@
                     },
                     template: `
                         <div>
-                            <div data-cloudsearch-field="documentname" data-cloudsearch-value-format="tps_format_test" data-cloudsearch-value-format-replace></div>
+                            <div data-cloudsearch-field="menuitemname" data-cloudsearch-value-format="tps_format_test" data-cloudsearch-value-format-replace></div>
                             <div data-cloudsearch-field="newsarticledate"></div>
                         </div>`,
                 },
@@ -96,23 +96,27 @@
                 },
                 facetsApplied: {
                     container: '#tps-aws-active-facets',
+                    facetFieldParams: {
+                        sort: '',
+                        size: 10
+                    }
                 },
                 searchParams: {
                     q: "matchall",
-                    return: "menuitemname,menuitemimage,menuitemsummary,menuitemcalltoactiontext,nodealiaspath,documentname,newsarticledate,newsarticlecategories,_score",
+                    return: "menuitemname",
                     //return: '_all_fields',
                     size: 5, // page size
-                    sort: "newsarticledate asc,_score desc",
+                    sort: "menuitemname asc,_score desc",
                     start: 0, // offset starting result (pagination)
                     "q.parser" : "structured",
                     "q.options" : "{ fields: [ 'documentname^5', 'menuitemname^5', 'menuitemsummary^2' ] }",                    
-                    // fq: "classname: 'TPSDT.NewsArticle'"
+                    fq: "classname: 'TPSDT.Course'"
 
                 },
-                facetsDictionary: { 
-                    "newsarticlecategories" : "",
-                    "newsarticletags" : "",
-                    "classname" : ""
+                facetsDictionary: {                     
+                    "classname" : "Foobar!",
+                    "courseinstructor"  : { label:"Instructor", dropdown: true, params: "{sort:\"count\", size:999 }" },
+                    "coursediscipline"  : "Discipline", 
                 },
 
             }         
