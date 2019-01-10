@@ -30,13 +30,13 @@
         dates: {
             hasDates: false,
             fields: {
-                cloudSearchField: null,
-                // event: 'change', // change, blur
                 zone: 'EST',
                 from: {
+                    cloudSearchField: null,
                     fieldId: null
                 },
                 to: {
+                    cloudSearchField: null,
                     fieldId: null
                 }
             }
@@ -739,14 +739,14 @@
         
         var df = ls.dates.fields;
 
-        if(!df.from.selector || !df.cloudSearchField)
+        if(!df.from.selector || !df.from.cloudSearchField)
             return;
         
         var fs = df.from.selector;
 
-        if(df.to.selector && df.from.selector) {
+        if(df.to.selector && df.to.cloudSearchField && df.from.selector) {
             fs += ', ' + df.to.selector;
-        } else if(df.to.selector) {
+        } else if(df.to.selector && df.to.cloudSearchField ) {
             fs = df.to.selector;
         }
 
@@ -858,12 +858,12 @@
         var date_f = "";
         if(local.dateSearch) {
             if(local.fromDate) {
-                date_f = ls.dates.fields.cloudSearchField + ": ['" + local.fromDate.toISOString() + "'";           
+                date_f = ls.dates.fields.from.cloudSearchField + ": ['" + local.fromDate.toISOString() + "'";           
             } 
 
             if(local.toDate) {
                 if(!local.fromDate) {
-                    date_f += ls.dates.fields.cloudSearchField + ":{"; 
+                    date_f += ls.dates.fields.to.cloudSearchField + ":{"; 
                 }
                 date_f += ",'" + local.toDate.toISOString() + "']";
             } else if(local.fromDate) {
