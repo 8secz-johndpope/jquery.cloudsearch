@@ -861,15 +861,22 @@
                 date_f = ls.dates.fields.from.cloudSearchField + ": ['" + local.fromDate.toISOString() + "'";           
             } 
 
-            if(local.toDate) {
+            if(local.toDate && ls.dates.fields.from.cloudSearchField == ls.dates.fields.to.cloudSearchField) {
                 if(!local.fromDate) {
                     date_f += ls.dates.fields.to.cloudSearchField + ":{"; 
                 }
                 date_f += ",'" + local.toDate.toISOString() + "']";
+            } else if(local.toDate) {
+                if(local.fromDate) {
+                    date_f += ",} "; 
+                }
+                date_f += ls.dates.fields.to.cloudSearchField + ":{"; 
+                date_f += ",'" + local.toDate.toISOString() + "']";                
             } else if(local.fromDate) {
                 date_f += ",}"; 
             }
             
+
             if (f) {
                 f += " " + date_f;
             } else {
