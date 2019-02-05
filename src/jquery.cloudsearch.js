@@ -83,6 +83,7 @@
             container: '#results',
             template: null,
             noResults: 'Sorry there are no results for your query',
+            noResultsClasses: '',
             onCreate: function () { },
             loaderContainer: null,
             pager: {
@@ -346,7 +347,7 @@
             c.html('');
         
         if(data["hits"]['found'] == 0) {
-            $('<div/>').addClass('cloudsearch-no-results').text(rs.noResults).appendTo(c);
+            $('<div/>').addClass('cloudsearch-no-results ' + rs.noResultsClasses).text(rs.noResults).appendTo(c);
         }
 
         $(data["hits"]["hit"]).each(function (i, v) {
