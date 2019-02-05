@@ -881,9 +881,7 @@
                 date_f += ",'" + local.toDate.toISOString() + "']";                
             } else if(local.fromDate) {
                 date_f += ",}"; 
-            }
-            
-            console.log(date_f);
+            }            
 
             if (f) {
                 f += " " + date_f;
