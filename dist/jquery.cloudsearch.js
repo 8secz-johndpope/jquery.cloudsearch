@@ -84,6 +84,7 @@
             template: null,
             noResults: 'Sorry there are no results for your query',
             onCreate: function () { },
+            loaderContainer: null,
             pager: {
                 container: null,
                 loadMore: true,
@@ -313,6 +314,7 @@
     function loadResults(data) {
 
         var rs = ls.results;
+        var ldr = $(rs.loaderContainer);
         var c = $(rs.container) ? $(rs.container) : $(local.container);
         
         if (!c || !data["hits"]["hit"])
@@ -379,7 +381,8 @@
                     }
                 });
                 c.append(t);
-
+                if(ldr)
+                    ldr.fadeOut();
                 //Callback on create
                 rs.onCreate.call(t);
             }
@@ -797,6 +800,10 @@
     function search() {
         local.isGeoSearch = false;
 
+        // show Loader
+        if(ls.results.loaderContainer)
+            $(ls.results.loaderContainer).fadeIn();
+
         // remove pager
         $(ls.results.pager.container).empty();
         local.pagerRendered = false;
@@ -874,8 +881,7 @@
                 date_f += ",'" + local.toDate.toISOString() + "']";                
             } else if(local.fromDate) {
                 date_f += ",}"; 
-            }
-            
+            }            
 
             if (f) {
                 f += " " + date_f;
