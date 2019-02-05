@@ -153,8 +153,30 @@
         if (!action)
             action = 'search';
 
-        if (options) {            
-            ls = $.extend(true, ls, options);            
+        if (options) {
+            //Default options.
+
+            if (options.cloudSearch)
+                options.cloudSearch = $.extend(ls.cloudSearch, options.cloudSearch);
+            if (options.googleGeocodeApi)
+                options.googleGeocodeApi = $.extend(ls.googleGeocodeApi, options.googleGeocodeApi);
+            if (options.geoSearch)
+                options.geoSearch = $.extend(ls.geoSearch, options.geoSearch);
+            if (options.searchParms)
+                options.searchParms = $.extend(ls.searchParms, options.searchParms);
+            if (options.dates)
+                options.dates = $.extend(true, ls.dates, options.dates);
+            if (options.facets)
+                options.facets = $.extend(ls.facets, options.facets);
+            if (options.facetsApplied)
+                options.facetsApplied = $.extend(true, ls.facetsApplied, options.facetsApplied);
+            if (options.results)
+                options.results = $.extend(true, ls.results, options.results);
+            if (options.urlParameters)
+                options.urlParameters = $.extend(ls.urlParameters, options.urlParameters);
+
+            ls = $.extend(ls, options);
+
             checkUrlParameters();
         }
 
