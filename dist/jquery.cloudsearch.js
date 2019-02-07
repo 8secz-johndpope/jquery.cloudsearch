@@ -276,7 +276,9 @@
                     .splice(
                         ls.facetsSelected.indexOf($(this).data('value')), 1
                     );
-                ls.facetsApplied.onChange.call(ls.facetsSelected.slice(0));
+                ls.searchParams.start = 0;
+                local.currentPage = 1;
+                ls.facetsApplied.onChange.call(ls.facetsSelected);
                 $(this).remove();
                 if(!(c.children().not('.clear-all-facets').length > 0)) {            
                     c.hide();
@@ -295,15 +297,13 @@
             .on('click', function (e) {
                 e.preventDefault();
                 local.clearAllAdded = false;
-                c.empty();
+                c.empty().hide();
                 ls.facetsSelected = [];
-
-                if(!(c.children().not('.clear-all-facets').length > 0)) {            
-                    c.hide();
-                } 
-
-                search();
-                //search();
+                ls.searchParams.start = 0;
+                local.currentPage = 1;
+                ls.facetsApplied.onChange.call(ls.facetsSelected);
+                
+                search();                
             })
             .prependTo(c);
             local.clearAllAdded = true;
