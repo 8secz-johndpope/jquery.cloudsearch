@@ -347,6 +347,10 @@
             c.html('');
         
         if(data["hits"]['found'] == 0) {
+
+            // hide Loader
+            if(ldr)
+                ldr.fadeOut();
             $('<div/>').addClass('cloudsearch-no-results ' + rs.noResultsClasses).text(rs.noResults).appendTo(c);
         }
 
