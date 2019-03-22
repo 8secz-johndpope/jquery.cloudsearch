@@ -1044,14 +1044,26 @@
         if (search) {
             
             if(ls.searchParams['q.parser'] == 'structured') {
-                ls.searchParams.q = '(or ';
-                $(search.split(' ')).each(function(k,v){
-                    ls.searchParams.q += '(term \''+v+'\')';
-                    ls.searchParams.q += '(prefix \''+v+'\')';
-                });
-                ls.searchParams.q += ')';
+                // check to see if the search term
+                // is a phrase wrapped in '' or ""
+                if( (search.indexOf('"') === 0 && search.lastIndexOf('"') === search.length -1) ) {
+                    ls.searchParams.q = '(phrase \''+search+'\')';
+                } else if (search.indexOf("'") === 0 && search.lastIndexOf("'") === search.length -1){
+                    
+                    ls.searchParams.q = '(phrase '+search+')';
+                } else {
+                    ls.searchParams.q = '(or ';
+
+                    ls.searchParams.q += '(term \''+search+'\')';
+                    ls.searchParams.q += '(prefix \''+search+'\')';
+                    // $(search.split(' ')).each(function(k,v){
+                    //     ls.searchParams.q += '(term \''+v+'\')';
+                    //     ls.searchParams.q += '(prefix \''+v+'\')';
+                    // });
+                    ls.searchParams.q += ')';
+                }
             } else {
-                ls.searchParams.q = search;
+                ls.searchParams.q = '\'' +search+ '\'';
             }
         }
         if (latitude && longitude) {

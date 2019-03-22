@@ -44,84 +44,88 @@
                     url: 'https:\/\/1gcvo6mof9.execute-api.us-east-1.amazonaws.com\/rcm-site-search-beta',
                     // key: 'Hh4O1adBCAardxSjFyPK471wauiRZnvyJ5USNbkh'
                 },
-                results: {
-                    container: '#tps-aws-results',  
-                    loaderContainer: '#tps-aws-loader',   
-                    noResultsClasses: 'test',             
-                    pager: {
-                        appendPager: true,
-                        container: '#tps-aws-results-pager',
-                        loadMore: false,
-                        pagerRangeIncrement: 5,
-                        enders: true,
-                        labels: {
-                            prev : '< Previous',
-                            next : 'Next >',
-                            first: '<< First',
-                            last: 'Last >>'
-                        }
-                    },
-                    template: `
-                        <div>
-                            <div data-cloudsearch-field="menuitemname" data-cloudsearch-value-format="tps_format_test" data-cloudsearch-value-format-replace></div>
-                            <div data-cloudsearch-field="newsarticledate"></div>
-                        </div>`,
-                },
-                facets: {
-                    container: "#tps-aws-facet-list",  
-                    facet: '<a href=\"#\"/>',
-                    facetClass: 'facet search-filter-options',
-                    countWrapper: '<span/>',
-                    countWrapperClass: 'facet-count',
-                    titleWrapper: '',
-                    title: "<a href=\"#\" />",
-                    titleClass: "accordion-title",
-                    titleWrapperClass: "facet-title",
-                    wrapperContainer: "<div data-tab-content />",
-                    wrapperContainerClass: "accordion-content facet-accordion-content content-area",
-                    wrapper: "<div>",
-                    wrapperClass: "facet-item",
-                    groupWrapper: '<li data-accordion-item />',
-                    groupWrapperClass: 'accordion-item tps-accordion-item is-active'
-                },
-                dates: {
-                    hasDates: true,
-                    fields: {    
-                        zone: null,                   
-                        from: {
-                            cloudSearchField: 'coursestartdate', 
-                            selector: '#fromDate'
-                        },
-                        to: {
-                            cloudSearchField: 'courseenddate', 
-                            selector: '#toDate'
-                        }
-                    }
-                },
-                facetsApplied: {
-                    container: '#tps-aws-active-facets',
-                    facetFieldParams: {
-                        sort: '',
-                        size: 10
-                    }
-                },
                 searchParams: {
                     q: "matchall",
-                    return: "menuitemname",
+                    return: "_all_fields",
                     //return: '_all_fields',
-                    size: 5, // page size
-                    sort: "menuitemname asc,_score desc",
+                    size: 10, // page size
+                    sort: "menuitemname asc, coursestartdate asc, _score desc",
                     start: 0, // offset starting result (pagination)
                     "q.parser" : "structured",
-                    "q.options" : "{ fields: [ 'documentname^5', 'menuitemname^5', 'menuitemsummary^2' ] }",                    
-                    fq: "classname: 'TPSDT.Course'"
+                    "q.options" : "{ fields: [ 'documentname^5', 'menuitemname^5', 'menuitemsummary^2', 'content','courseinstructor^6', 'courseorgid^6' ] }",
+                    fq: "(and classname: 'TPSDT.Course' courseformat:'In-Person')"
+                },
+                results: {
+                container: '#tps-aws-results',
+                template: '<div class="cell grid-x grid-margin-x align-middle tps-search-list-item"><div data-cloudsearch-field="documentname" data-cloudsearch-value-format="tps_formatListItem" data-cloudsearch-value-format-replace></div></div>',
+                pager: {
+                    appendPager: true,
+                    container: '#tps-aws-results-pager',
+                    loadMore: false,
+                    pagerRangeIncrement: 5,
+                },
+                loaderContainer: '#tps-aws-loader',
+                noResultsClasses: 'cell auto',
+                },
+                dates: {
+                hasDates: true,
+                fields: {      
+                    zone: 'GMT',
+                    from: {
+                        cloudSearchField: 'coursestartdate',
+                        selector: '#fromDate'
+                    },
+                    to: {
+                        cloudSearchField: 'courseenddate',
+                        selector: '#toDate'
+                    }
+                }
+                },
+                facetsDictionary: { 
+                "courseinstructor"  : {label : "Instructor", dropdown: true, params: "{sort:\"bucket\", size:999 }"},
+                "courseregistration" : "Course Status",
+                "coursediscipline"  : {label:"Discipline",  params: "{sort:\"bucket\", size:999 }"}, 
+                "coursedays"  : {label: "Days",  params: "{sort:\"count\", size:999 }"} ,
+                "coursetimeofday"  : {label: "Time",  params: "{sort:\"bucket\", size:999 }"},
+                "coursetypecat" : {label:"Course Type",  params: "{sort:\"bucket\", size:999 }"},
+                "coursestudenttype"  : {label: "Age Group",  params: "{sort:\"bucket\", size:999 }"},
+                //"coursedifficulty"  : "Difficulty Level",
+                },
+                facets: {
+                container: "#tps-aws-facet-list",  
+                facet: '<a href=\"#\"/>',
+                facetClass: 'facet search-filter-options',
+                countWrapper: '<span/>',
+                countWrapperClass: 'facet-count',
+                titleWrapper: '',
+                title: "<a href=\"#\" />",
+                titleClass: "accordion-title",
+                titleWrapperClass: "facet-title",
+                wrapperContainer: "<div data-tab-content />",
+                wrapperContainerClass: "accordion-content facet-accordion-content content-area",
+                wrapper: "<div>",
+                wrapperClass: "facet-item",
+                groupWrapper: '<li data-accordion-item />',
+                groupWrapperClass: 'accordion-item tps-accordion-item'
+                },
+                facetsApplied: {
+                container: '#tps-aws-active-facets',
+                },
+                facetsSelected: [  ],
+                urlParameters: {
+                    search: 'searchtext',
+                    facets: 'fq'
+                },
+                onLoad: function (d) { 
+                    // TPS.AmazonSearch.updateSearchHistory();
+                    // Foundation.reInit('accordion'); 
+                    // window.scrollTo($('#tps-aws-results').scrollTop(),0);
+                    // $('#AWS_Facets').foundation('close');
+                    // TPS.AmazonSearch.coursesSearched = true;      
+                    // $('[data-aws-field="courseorgid"]').prop('disabled', false);
+                },
+                debug: false
 
-                },
-                facetsDictionary: {                     
-                    "classname" : "Foobar!",
-                    "courseinstructor"  : { label:"Instructor", dropdown: true, params: "{sort:\"count\", size:999 }" },
-                    "coursediscipline"  : "Discipline", 
-                },
 
             }         
 
