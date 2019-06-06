@@ -872,7 +872,7 @@
             ls.facetsSelected.forEach(function (item, index) {
                 var p = item.split('||');
                 // apply filter and escape single quotes in value (')
-                facetFilter.push('' + p[0] + ': \'' + p[1].replace(/[']/gi, '\'\'') + '\'');
+                facetFilter.push('' + p[0] + ': \'' + p[1].replace(/[']/gi, "\\'") + '\'');
             });
 
             f = facetFilter.join(' ');
@@ -1042,28 +1042,28 @@
 
         //Apply Parameters
         if (search) {
-            
+            var escapedSearch = search.replace(/[']/gi, "\\'");
             if(ls.searchParams['q.parser'] == 'structured') {
                 // check to see if the search term
                 // is a phrase wrapped in '' or ""
                 if( (search.indexOf('"') === 0 && search.lastIndexOf('"') === search.length -1) ) {
-                    ls.searchParams.q = '(phrase \'' + search.substring(1, search.length - 1) + '\')';
+                    ls.searchParams.q = '(phrase \'' + escapedSearch +'\')';
                 } else if (search.indexOf("'") === 0 && search.lastIndexOf("'") === search.length -1){
-                    
-                    ls.searchParams.q = '(phrase '+search+')';
+
+                    ls.searchParams.q = '(phrase ' + search.replace("'","\\'") + ')';
                 } else {
                     ls.searchParams.q = '(or ';
 
-                    //ls.searchParams.q += '(term \''+search+'\')';
-                    //ls.searchParams.q += '(prefix \''+search+'\')';
-                    $(search.split(' ')).each(function(k,v){
-                        ls.searchParams.q += '(term \''+v+'\')';
-                        ls.searchParams.q += '(prefix \''+v+'\')';
-                    });
+                    ls.searchParams.q += '(term \'' + escapedSearch +'\')';
+                    ls.searchParams.q += '(prefix \'' + escapedSearch +'\')';
+                    // $(search.split(' ')).each(function(k,v){
+                    //     ls.searchParams.q += '(term \''+v+'\')';
+                    //     ls.searchParams.q += '(prefix \''+v+'\')';
+                    // });
                     ls.searchParams.q += ')';
                 }
             } else {
-                ls.searchParams.q = '\'' +search+ '\'';
+                ls.searchParams.q = '\'' + escapedSearch + '\'';
             }
         }
         if (latitude && longitude) {
