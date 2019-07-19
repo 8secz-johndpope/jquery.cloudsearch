@@ -92,6 +92,7 @@
                 appendPager: false,
                 pagerRangeIncrement: 5,
                 enders: true,
+                updateHistory: false,
                 labels: {
                     prev: 'Previous',
                     next: 'Next',
@@ -426,9 +427,10 @@
         var pg = ls.results.pager;
         
         if (pg.appendPager) {            
-            $(pg.container).empty();
-            if(!local.pagerRendered) {
                               
+            var pg_c = $(pg.container);
+            pg_c.empty();
+            if (!local.pagerRendered) {
 
                 local.pagerRange[0] = 1;
                 local.pagerRange[1] = pg.pagerRangeIncrement 
@@ -439,8 +441,9 @@
                 }
 
             }
-            generatePagerLinks();            
-            // generatePagerText();
+            generatePagerLinks();
+
+            pg_c.fadeIn();
             local.pagerRendered = true;
         }        
     }
@@ -825,14 +828,22 @@
 
     //Execute the AJAX call to AWS Cloud Search
     function search() {
+
+        if (ls.results.pager.updateHistory) {
+            updatePageHistory();
+        }
+
+
+
         local.isGeoSearch = false;
 
         // show Loader
-        if(ls.results.loaderContainer)
+        if (ls.results.loaderContainer)
             $(ls.results.loaderContainer).fadeIn();
 
         // remove pager
-        $(ls.results.pager.container).empty();
+        if (ls.results.pager.container)
+            $(ls.results.pager.container).empty().fadeOut();
         local.pagerRendered = false;
 
         if (local.waitingLatLong)
@@ -957,6 +968,8 @@
 
 
 
+    // resolve address text to Lat/Lng values from geocoding api
+
     function resolveAddress(address) {
         var s = ls.googleGeocodeApi;
 
@@ -998,6 +1011,7 @@
         return dist;
     }
 
+    // Log messages to console when debug enabled.
     function debug(obj) {
         if (ls.debug && window.console && window.console.log) {
             window.console.log(obj);
@@ -1032,7 +1046,8 @@
             latitude = query(s.latitude),
             longitude = query(s.longitude),
             latlong = query(s.latlong),
-            search = query(s.search);
+            search = query(s.search),
+            page = query(s.page);
 
         //Split LatLong
         if (latlong && latlong.indexOf(',') != -1) {
@@ -1066,6 +1081,16 @@
                 ls.searchParams.q = '\'' + escapedSearch + '\'';
             }
         }
+        if (page && ls.results.pager.updateHistory) {
+            local.currentPage = Math.floor(parseFloat(page));
+            if (ls.results.pager.loadMore) {
+                ls.searchParams.start = 0;
+                ls.searchParams.top = local.currentPage * ls.searchParams.size;
+            } else {
+                ls.searchParams.start = (local.currentPage - 1) * ls.searchParams.size;
+            }
+        }
+
         if (latitude && longitude) {
             ls.geoSearch.lat = latitude;
             ls.geoSearch.lng = longitude;
@@ -1082,6 +1107,99 @@
 
     }
 
+    // update the current page query string for active facets
+    function updateFacetHistory() {
+
+        var facetParam, urlInit, urlNew, facetString, updatedHistoryUrl;
+        urlInit = window.location.pathname + window.location.search;
+        facetParam = ls.urlParameters.facets;
+        // check to see if facets are already in the
+        // query string, and if so, remove them
+        if (urlInit.indexOf(facetParam) > -1) {
+            urlNew = updateUrlParameter(urlInit, facetParam);
+        } else {
+            urlNew = urlInit;
+        }
+        // check to see if facets have been 
+        // applied to the search options
+        // and if so, add them to the query string
+        if (ls.facetsSelected.length > 0) {
+
+            // facetString = .toString();
+            facetString = '';
+            $.each(ls.facetsSelected, function (k, v) {
+                if (k > 0) {
+                    facetString += ';';
+                }
+                facetString += encodeURIComponent(v.toString());
+            });
+            updatedHistoryUrl = urlNew;
+            updatedHistoryUrl += (urlNew.indexOf('?') > -1) ? '&' : '?';
+            updatedHistoryUrl += facetParam + '=' + facetString;
+        } else {
+            updatedHistoryUrl = urlNew;
+        }
+        // push the new search query string to the browser history
+        window.history.replaceState({ 'url': updatedHistoryUrl }, '', updatedHistoryUrl);
+    }
+
+    // update the current page query string for pagination
+    function updatePageHistory() {
+
+        var urlInit, urlNew, pageParam, pageVal, updatedHistoryUrl;
+        urlInit = window.location.pathname + window.location.search;
+        pageParam = ls.urlParameters.page;
+        // check to see if facets are already in the
+        // query string, and if so, remove them
+        if (urlInit.indexOf(pageParam) > -1) {
+            urlNew = updateUrlParameter(urlInit, pageParam);
+        } else {
+            urlNew = urlInit;
+        }
+        // check to see if facets have been 
+        // applied to the search options
+        // and if so, add them to the query string
+        if (local.currentPage > 1) {
+            // facetString = .toString();
+            pageVal = local.currentPage.toString();
+
+            updatedHistoryUrl = urlNew;
+            updatedHistoryUrl += (urlNew.indexOf('?') > -1) ? '&' : '?';
+            updatedHistoryUrl += pageParam + '=' + pageVal;
+        } else {
+            updatedHistoryUrl = urlNew;
+        }
+        // push the new search query string to the browser history
+        window.history.replaceState({ 'url': updatedHistoryUrl }, 'page', updatedHistoryUrl);
+    }
+
+    //append or update query string parameters
+    function updateUrlParameter(uri, key, value) {
+        // remove the hash part before operating on the uri
+        var i = uri.indexOf('#');
+        var hash = i === -1 ? '' : uri.substr(i);
+        uri = i === -1 ? uri : uri.substr(0, i);
+
+        var re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+        var separator = uri.indexOf('?') !== -1 ? "&" : "?";
+
+        if (!value) {
+            // remove key-value pair if value is empty
+            uri = uri.replace(new RegExp("([?&]?)" + key + "=[^&]*", "i"), '');
+            if (uri.slice(-1) === '?') {
+                uri = uri.slice(0, -1);
+            }
+            // replace first occurrence of & by ? if no ? is present
+            if (uri.indexOf('?') === -1) {
+                uri = uri.replace(/&/, '?')
+            }
+        } else if (uri.match(re)) {
+            uri = uri.replace(re, '$1' + key + "=" + value + '$2');
+        } else {
+            uri = uri + separator + key + "=" + value;
+        }
+        return uri + hash;
+    }
 
 
 }(jQuery));
