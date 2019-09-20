@@ -299,7 +299,7 @@
                 e.preventDefault();
                 local.clearAllAdded = false;
                 c.empty().hide();
-                ls.facetsSelected = [];
+                ls.facetsSelected.length = 0;
                 ls.searchParams.start = 0;
                 local.currentPage = 1;
                 ls.facetsApplied.onChange.call(ls.facetsSelected);
